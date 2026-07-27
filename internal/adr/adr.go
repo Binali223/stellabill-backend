@@ -81,7 +81,7 @@ func LoadDir(dir string) ([]Record, error) {
 		if ent.IsDir() || !strings.HasSuffix(ent.Name(), ".md") {
 			continue
 		}
-		if ent.Name() == IndexName || ent.Name() == "ADR_TOOLS.md" {
+		if ent.Name() == IndexName || ent.Name() == "ADR_TOOLS.md" || ent.Name() == "VERIFICATION.md" {
 			continue
 		}
 		path := filepath.Join(dir, ent.Name())
