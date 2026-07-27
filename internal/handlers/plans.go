@@ -8,6 +8,7 @@ import (
 	"stellarbill-backend/internal/pagination"
 )
 
+// Plan represents an API response plan object.
 type Plan struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
@@ -17,7 +18,10 @@ type Plan struct {
 	Description string `json:"description"`
 }
 
+// GetID returns the plan identifier.
 func (p Plan) GetID() string        { return p.ID }
+
+// GetSortValue returns the plan name used for pagination cursor ordering.
 func (p Plan) GetSortValue() string { return p.Name } // Standardize on Name as sort key
 
 // ListPlans handles requests for listing all available plans.

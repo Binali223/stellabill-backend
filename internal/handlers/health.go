@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"math"
 	"net/http"
 	"os"
@@ -252,7 +253,7 @@ func (hc *HealthChecker) checkDatabase(ctx context.Context) interface{} {
 	}
 
 	// Determine failure reason for final status
-	if lastErr == context.DeadlineExceeded {
+	if errors.Is(lastErr, context.DeadlineExceeded) {
 		return DependencyHealth{
 			Status:  StatusDegraded,
 			Message: "database connection timeout - may be overloaded or network issue",
@@ -260,7 +261,7 @@ func (hc *HealthChecker) checkDatabase(ctx context.Context) interface{} {
 		}
 	}
 
-	if lastErr == sql.ErrConnDone {
+	if errors.Is(lastErr, sql.ErrConnDone) {
 		return DependencyHealth{
 			Status:  StatusUnhealthy,
 			Message: "database connection closed unexpectedly",
@@ -302,7 +303,7 @@ func (hc *HealthChecker) checkOutbox(ctx context.Context) interface{} {
 		}
 	}
 
-	if ctx.Err() == context.DeadlineExceeded {
+	if ctx.Err() != nil && errors.Is(ctx.Err(), context.DeadlineExceeded) {
 		return DependencyHealth{
 			Status:  StatusDegraded,
 			Message: "outbox health check timeout",

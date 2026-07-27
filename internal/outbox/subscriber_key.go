@@ -3,6 +3,7 @@ package outbox
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -122,7 +123,7 @@ func (r *postgresSubscriberKeyRepository) GetActiveKey(subscriberID string) (*Su
 		LIMIT 1`
 
 	key, err := r.scanKey(r.db.QueryRow(query, subscriberID, SubscriberKeyActive, time.Now()))
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrMissingSubscriberKey
 	}
 	if err != nil {

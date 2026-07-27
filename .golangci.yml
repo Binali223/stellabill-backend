@@ -1,0 +1,119 @@
+version: "2"
+
+linters:
+  default: standard
+
+  enable:
+    - dupl
+    - errorlint
+    - gocritic
+    - nilnil
+    - revive
+
+  settings:
+    dupl:
+      threshold: 150
+
+    errorlint:
+      errorf: false
+      asserts: false
+      comparison: true
+
+    gocritic:
+      enabled-checks:
+        - appendAssign
+        - badLock
+        - badRegexp
+        - builtinShadow
+        - captLocal
+        - commentedOutCode
+        - deferUnlambda
+        - dupArg
+        - dupBranchBody
+        - dupCase
+        - dupSubExpr
+        - elseif
+        - exitAfterDefer
+        - exposedSyncMutex
+        - flagDeref
+        - hugeParam
+        - ifElseChain
+        - importShadow
+        - nestingReduce
+        - newDeref
+        - offBy1
+        - singleCaseSwitch
+        - sloppyLen
+        - sloppyTypeAssert
+        - switchTrue
+        - typeUnparen
+        - underef
+        - unlambda
+        - unnecessaryDefer
+        - unslice
+        - valSwap
+        - wrapperFunc
+
+    nilnil:
+      check-blank: false
+
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: dot-imports
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: exported
+          disabled: true
+        - name: increment-decrement
+        - name: var-naming
+        - name: package-comments
+          disabled: true
+        - name: range
+        - name: receiver-naming
+        - name: time-naming
+        - name: unexported-return
+        - name: indent-error-flow
+          disabled: true
+        - name: errorf
+          disabled: true
+        - name: empty-block
+        - name: superfluous-else
+        - name: unused-parameter
+        - name: unreachable-code
+        - name: redefines-builtin-id
+
+issues:
+  exclude-rules:
+    # Allow (nil, nil) returns in breaker callbacks and cache lookups.
+    - linters:
+        - nilnil
+      path: "internal/db/breaker\\.go"
+      text: "both.*return.*nil.*nil"
+    - linters:
+        - nilnil
+      path: "internal/cache/cache\\.go"
+      text: "both.*return.*nil.*nil"
+    - linters:
+        - nilnil
+      path: "internal/worker/"
+      text: "both.*return.*nil.*nil"
+    - linters:
+        - nilnil
+      path: "internal/outbox/"
+      text: "both.*return.*nil.*nil"
+    - linters:
+        - nilnil
+      path: "internal/migrations/"
+      text: "both.*return.*nil.*nil"
+    - linters:
+        - nilnil
+      path: "internal/db/pool\\.go"
+      text: "both.*return.*nil.*nil"
+
+    # Tolerate dupl in test files
+    - linters:
+        - dupl
+      path: "_test\\.go$"

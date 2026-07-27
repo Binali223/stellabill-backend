@@ -3,6 +3,7 @@ package repository
 import (
     "context"
     "database/sql"
+    "errors"
     "time"
 )
 
@@ -87,12 +88,12 @@ func (r *PostgresSubscriptionRepo) fetchSubscription(ctx context.Context, query 
         &nextBilling,
         &deletedAt,
     )
-    if err != nil {
-        if err == sql.ErrNoRows {
-            return nil, ErrNotFound
-        }
-        return nil, err
-    }
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
 
     if nextBilling.Valid {
         subscription.NextBilling = nextBilling.Time.UTC().Format(time.RFC3339)

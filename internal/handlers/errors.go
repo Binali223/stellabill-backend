@@ -1,14 +1,15 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"stellarbill-backend/internal/service"
 	"stellarbill-backend/internal/security"
+	"stellarbill-backend/internal/service"
 )
 
 // ErrorCode represents a standardized error code
@@ -77,14 +78,14 @@ func generateTraceID() string {
 
 // MapServiceErrorToResponse maps domain service errors to HTTP status codes and error codes
 func MapServiceErrorToResponse(err error) (int, ErrorCode, string) {
-	switch err {
-	case service.ErrNotFound:
+	switch {
+	case errors.Is(err, service.ErrNotFound):
 		return http.StatusNotFound, ErrorCodeNotFound, "The requested resource was not found"
-	case service.ErrDeleted:
+	case errors.Is(err, service.ErrDeleted):
 		return http.StatusGone, ErrorCodeNotFound, "The requested resource has been deleted"
-	case service.ErrForbidden:
+	case errors.Is(err, service.ErrForbidden):
 		return http.StatusForbidden, ErrorCodeForbidden, "You do not have permission to access this resource"
-	case service.ErrBillingParse:
+	case errors.Is(err, service.ErrBillingParse):
 		return http.StatusInternalServerError, ErrorCodeInternalError, "An internal error occurred while processing your request"
 	default:
 		return http.StatusInternalServerError, ErrorCodeInternalError, "An unexpected error occurred"

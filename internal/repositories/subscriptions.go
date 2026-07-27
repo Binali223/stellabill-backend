@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -141,7 +142,7 @@ func (r *postgresSubscriptionRepository) GetByID(ctx context.Context, id string)
 	)
 	
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("subscription not found")
 		}
 		return nil, fmt.Errorf("failed to get subscription: %w", err)

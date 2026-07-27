@@ -3,6 +3,7 @@ package outbox
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -174,7 +175,7 @@ func (r *PostgresPgxRepository) GetPublisherProgress(publisher string) (*uuid.UU
 	err := r.pool.QueryRow(ctx,
 		`SELECT last_processed_id FROM outbox_publisher_progress WHERE publisher=$1`,
 		publisher).Scan(&lastID)
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {

@@ -234,7 +234,7 @@ func (w *OutboxWorker) claimBatch(ctx context.Context) ([]*OutboxEvent, error) {
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback() //nolint:errcheck
+	defer tx.Rollback() //nolint:errcheck // rollback after commit is always no-op or safely ignorable
 
 	// Claim eligible rows: pending, or failed with next_retry_at in the past.
 	query := `

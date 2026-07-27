@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -214,7 +215,7 @@ func (r *postgresRepository) GetPublisherProgress(publisher string) (*uuid.UUID,
 	row := r.db.QueryRow(query, publisher)
 	var lastID uuid.UUID
 	if err := row.Scan(&lastID); err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, fmt.Errorf("failed to get publisher progress: %w", err)
@@ -336,7 +337,7 @@ func publisherProgressReached(ctx context.Context, exec sqlProgressExecutor, eve
 			SELECT last_event_id
 			FROM outbox_publisher_progress
 			WHERE publisher = $1`, publisher).Scan(&lastID)
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return false, nil
 		}
 		if err != nil {

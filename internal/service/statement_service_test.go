@@ -105,7 +105,7 @@ func TestStatementGetDetail_NotFound(t *testing.T) {
 	svc := newStatementService() // empty repo
 
 	_, _, err := svc.GetDetail(context.Background(), "cust-1", []string{"customer"}, "stmt-missing")
-	if err != service.ErrNotFound {
+	if !errors.Is(err, service.ErrNotFound) {
 		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }
@@ -128,7 +128,7 @@ func TestStatementGetDetail_SoftDeleted(t *testing.T) {
 	svc := newStatementService(row)
 
 	_, _, err := svc.GetDetail(context.Background(), "cust-1", []string{"customer"}, "stmt-del")
-	if err != service.ErrDeleted {
+	if !errors.Is(err, service.ErrDeleted) {
 		t.Errorf("expected ErrDeleted, got %v", err)
 	}
 }
@@ -138,7 +138,7 @@ func TestStatementGetDetail_WrongCaller(t *testing.T) {
 	svc := newStatementService(rows...)
 
 	_, _, err := svc.GetDetail(context.Background(), "cust-other", []string{"customer"}, "stmt-1")
-	if err != service.ErrForbidden {
+	if !errors.Is(err, service.ErrForbidden) {
 		t.Errorf("expected ErrForbidden, got %v", err)
 	}
 }
@@ -169,7 +169,7 @@ func TestStatementListByCustomer_WrongCaller(t *testing.T) {
 
 	q := repository.StatementQuery{Limit: 10}
 	_, _, _, err := svc.ListByCustomer(context.Background(), "cust-other", []string{"customer"}, "cust-1", q)
-	if err != service.ErrForbidden {
+	if !errors.Is(err, service.ErrForbidden) {
 		t.Errorf("expected ErrForbidden, got %v", err)
 	}
 }

@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -109,7 +110,7 @@ func (r *postgresPlanRepository) GetByID(ctx context.Context, id string) (*Plan,
 	)
 	
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("plan not found")
 		}
 		return nil, fmt.Errorf("failed to get plan: %w", err)

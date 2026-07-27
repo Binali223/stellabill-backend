@@ -54,7 +54,7 @@ func (s *subscriptionService) GetDetail(ctx context.Context, tenantID string, ca
 	// 1. Fetch subscription row scoped to tenant.
 	row, err := s.subRepo.FindByIDAndTenant(ctx, subscriptionID, tenantID)
 	if err != nil {
-		if err == repository.ErrNotFound {
+		if errors.Is(err, repository.ErrNotFound) {
 			return nil, nil, ErrNotFound
 		}
 		return nil, nil, err
@@ -74,7 +74,7 @@ func (s *subscriptionService) GetDetail(ctx context.Context, tenantID string, ca
 	var planMeta *PlanMetadata
 	planRow, err := s.planRepo.FindByID(ctx, row.PlanID)
 	if err != nil {
-		if err == repository.ErrNotFound {
+		if errors.Is(err, repository.ErrNotFound) {
 			warnings = append(warnings, "plan not found")
 		} else {
 			return nil, nil, err

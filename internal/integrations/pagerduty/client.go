@@ -133,7 +133,7 @@ func (c *Client) send(ctx context.Context, p payload) error {
 			lastErr = fmt.Errorf("pagerduty: http error: %w", err)
 			continue
 		}
-		io.Copy(io.Discard, resp.Body) //nolint:errcheck
+		io.Copy(io.Discard, resp.Body) //nolint:errcheck // best-effort drain of response body
 		resp.Body.Close()
 
 		if resp.StatusCode >= 500 {

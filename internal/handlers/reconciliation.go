@@ -27,7 +27,11 @@ func NewReconcileHandler(adapter reconciliation.Adapter, store reconciliation.St
 			RespondWithAuthError(c, "Missing tenant context")
 			return
 		}
-		tid := tenantID.(string)
+		tid, ok := tenantID.(string)
+		if !ok {
+			RespondWithInternalError(c, "Invalid tenant context")
+			return
+		}
 
 		roles := auth.ExtractRoles(c)
 		if !hasAnyPermission(roles, auth.PermManageReconciliation) {
@@ -120,7 +124,11 @@ func NewListReportsHandler(store reconciliation.Store) gin.HandlerFunc {
 			RespondWithAuthError(c, "Missing tenant context")
 			return
 		}
-		tid := tenantID.(string)
+		tid, ok := tenantID.(string)
+		if !ok {
+			RespondWithInternalError(c, "Invalid tenant context")
+			return
+		}
 
 		roles := auth.ExtractRoles(c)
 		if !hasAnyPermission(roles, auth.PermReadReconciliation) {

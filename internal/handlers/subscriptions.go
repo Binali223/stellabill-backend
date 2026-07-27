@@ -15,6 +15,7 @@ import (
 // - Fan-out hub + heartbeats every 15s
 // - Graceful shutdown on context done
 // - Ready for outbox dispatcher integration
+// Subscription represents an API response subscription object.
 type Subscription struct {
 	ID          string `json:"id"`
 	PlanID      string `json:"plan_id"`
@@ -25,9 +26,13 @@ type Subscription struct {
 	NextBilling string `json:"next_billing,omitempty"`
 }
 
+// GetID returns the subscription identifier.
 func (s Subscription) GetID() string        { return s.ID }
+
+// GetSortValue returns the customer identifier used for pagination cursor ordering.
 func (s Subscription) GetSortValue() string { return s.Customer } // Sort by customer for now
 
+// ListSubscriptions handles requests for listing all subscriptions.
 func (h *Handler) ListSubscriptions(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", "10")
 	limit, _ := strconv.Atoi(limitStr)
@@ -57,6 +62,7 @@ func (h *Handler) ListSubscriptions(c *gin.Context) {
 	})
 }
 
+// GetSubscription handles requests for retrieving a single subscription by ID.
 func (h *Handler) GetSubscription(c *gin.Context) {
 	id := c.Param("id")
 	sub, err := h.Subscriptions.GetSubscription(c, id)

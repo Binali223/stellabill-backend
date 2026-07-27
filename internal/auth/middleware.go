@@ -7,7 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// RoleContextKey is the context key used to store the user's role.
 const RoleContextKey = "role"
+
+// RolesContextKey is the context key used to store the user's roles list.
 const RolesContextKey = "roles"
 
 // ExtractRole returns the first available role from the request context

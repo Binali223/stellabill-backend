@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -139,7 +140,7 @@ func TestGetDetail_SoftDeleted(t *testing.T) {
 	)
 
 	_, _, err := svc.GetDetail(context.Background(), "tenant-1", "cust-3", "sub-3")
-	if err != service.ErrDeleted {
+	if !errors.Is(err, service.ErrDeleted) {
 		t.Errorf("expected ErrDeleted, got %v", err)
 	}
 }
@@ -151,7 +152,7 @@ func TestGetDetail_NotFound(t *testing.T) {
 	)
 
 	_, _, err := svc.GetDetail(context.Background(), "tenant-1", "cust-x", "sub-unknown")
-	if err != service.ErrNotFound {
+	if !errors.Is(err, service.ErrNotFound) {
 		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }
@@ -175,7 +176,7 @@ func TestGetDetail_UnparseableAmount(t *testing.T) {
 	)
 
 	_, _, err := svc.GetDetail(context.Background(), "tenant-1", "cust-4", "sub-4")
-	if err != service.ErrBillingParse {
+	if !errors.Is(err, service.ErrBillingParse) {
 		t.Errorf("expected ErrBillingParse, got %v", err)
 	}
 }
@@ -199,7 +200,7 @@ func TestGetDetail_WrongCaller(t *testing.T) {
 	)
 
 	_, _, err := svc.GetDetail(context.Background(), "tenant-1", "cust-other", "sub-5")
-	if err != service.ErrForbidden {
+	if !errors.Is(err, service.ErrForbidden) {
 		t.Errorf("expected ErrForbidden, got %v", err)
 	}
 }
@@ -223,7 +224,7 @@ func TestGetDetail_CrossTenantPrevention(t *testing.T) {
 	)
 
 	_, _, err := svc.GetDetail(context.Background(), "tenant-2", "cust-6", "sub-6")
-	if err != service.ErrNotFound {
+	if !errors.Is(err, service.ErrNotFound) {
 		t.Errorf("expected ErrNotFound for cross-tenant query, got %v", err)
 	}
 }

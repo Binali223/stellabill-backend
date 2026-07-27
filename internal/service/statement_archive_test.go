@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"stellarbill-backend/internal/repository"
@@ -58,7 +59,7 @@ func TestStatementRehydration_ArchivedNotFound(t *testing.T) {
 	svc := service.NewStatementService(subRepo, stmtRepo)
 
 	_, _, err := svc.GetDetail(ctx, "cust-1", []string{"customer"}, "nonexistent")
-	if err != service.ErrNotFound {
+	if !errors.Is(err, service.ErrNotFound) {
 		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }
@@ -148,7 +149,7 @@ func TestStatementRehydration_RBAC_WithArchive(t *testing.T) {
 
 	// Unauthorized caller
 	_, _, err := svc.GetDetail(ctx, "cust-unauthorized", []string{"customer"}, "stmt-rbac")
-	if err != service.ErrForbidden {
+	if !errors.Is(err, service.ErrForbidden) {
 		t.Errorf("expected ErrForbidden, got %v", err)
 	}
 
