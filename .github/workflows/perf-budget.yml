@@ -1,0 +1,107 @@
+name: Performance Budget Enforcement
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: perf-budget-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Enforce a strict 1.10x (10%) budget limit on regressions
+  REGRESSION_THRESHOLD: "1.10"
+  # Whitelist stable benchmarks to avoid flaky noise
+  WHITELISTED_BENCHMARKS: "BenchmarkListPlans,BenchmarkListSubscriptions"
+
+jobs:
+  # Job to run and upload the baseline on push to main
+  update-baseline:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run benchmarks on main (baseline)
+        run: |
+          go test -bench=. -benchmem -count=10 -run=^$ -timeout=20m ./internal/handlers/... | tee baseline.txt
+          
+      - name: Upload baseline artifact
+        uses: actions/upload-artifact@v4
+        with:
+          # Keyed by SHA as requested
+          name: perf-baseline-${{ github.sha }}
+          path: baseline.txt
+          retention-days: 90
+
+  # Job to run PR benchmarks and compare against the baseline
+  enforce-budget:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install benchstat
+        run: go install golang.org/x/perf/cmd/benchstat@latest
+
+      - name: Run benchmarks on PR head
+        run: |
+          go test -bench=. -benchmem -count=10 -run=^$ -timeout=20m ./internal/handlers/... | tee new.txt
+          
+      - name: Download baseline artifact
+        id: download-baseline
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          # Keyed by PR base SHA as requested
+          name: perf-baseline-${{ github.event.pull_request.base.sha }}
+          path: .
+
+      - name: Test bash script logic
+        run: |
+          chmod +x scripts/test_analyze_benchmarks.sh scripts/analyze_benchmarks.sh
+          bash scripts/test_analyze_benchmarks.sh
+
+      - name: Enforce Performance Budget
+        if: steps.download-baseline.outcome == 'success'
+        run: |
+          # Use our analyze script which supports whitelists, threshold, and skipping absent benchmarks
+          bash scripts/analyze_benchmarks.sh baseline.txt new.txt ${{ env.REGRESSION_THRESHOLD }} "${{ env.WHITELISTED_BENCHMARKS }}" | tee analysis_report.txt
+
+          echo "## Performance Budget Report" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat analysis_report.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Fallback if baseline is missing
+        if: steps.download-baseline.outcome != 'success'
+        run: |
+          echo "⚠️ Baseline for commit ${{ github.event.pull_request.base.sha }} not found." >> $GITHUB_STEP_SUMMARY
+          echo "This typically happens if the base commit didn't trigger the baseline job or the artifact expired." >> $GITHUB_STEP_SUMMARY
+          echo "Performance budget checks are skipped for this run, but PR head benchmarks were successful." >> $GITHUB_STEP_SUMMARY
+          echo "Skipping baseline check..."
