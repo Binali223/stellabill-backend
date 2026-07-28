@@ -66,8 +66,6 @@ func (m *InMemory) Delete(_ context.Context, key string) error {
 	return nil
 }
 
-// Len returns the number of entries currently in the cache (including expired
-// ones that have not been cleaned up). Used for testing and introspection.
 func (m *InMemory) Len() int {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
