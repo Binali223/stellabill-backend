@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"stellarbill-backend/internal/config"
+	"stellarbill-backend/internal/middleware"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -80,47 +81,26 @@ func NewPoolConfig(cfg config.Config) (*pgxpool.Config, error) {
 	// (or PgBouncer sidecar when enabled).
 	if poolCfg.ConnConfig != nil {
 		poolCfg.ConnConfig.ConnectTimeout = time.Duration(cfg.DBPoolConnectTimeout) * time.Second
-
-		// Apply the statement cache mode so the pool is safe for PgBouncer
-		// transaction pooling when required.
-		applyStatementCacheMode(poolCfg.ConnConfig, cfg.DBStatementCacheMode)
+		poolCfg.ConnConfig.Tracer = &timingTracer{}
 	}
 
 	return poolCfg, nil
 }
 
-// applyStatementCacheMode sets the pgx query-exec mode on connCfg based on the
-// mode string.  An empty or unrecognised value defaults to "prepare"
-// (QueryExecModeCacheStatement), which is the standard pgx behaviour.
-//
-// Mode reference:
-//
-//	"prepare"  — QueryExecModeCacheStatement: pgx prepares statements on first
-//	             use and re-uses them.  Safe for direct Postgres connections and
-//	             PgBouncer session pooling only.
-//
-//	"describe" — QueryExecModeDescribeExec: pgx calls DescribeStatement to infer
-//	             parameter types instead of sending a Parse message, so no named
-//	             prepared statements are registered on the backend connection.
-//	             Required for PgBouncer transaction pooling.
-//
-//	"simple"   — QueryExecModeSimpleProtocol: pgx uses the Postgres simple query
-//	             protocol (text mode, no binary encoding). Maximum compatibility;
-//	             also safe for PgBouncer transaction pooling.
-func applyStatementCacheMode(connCfg *pgx.ConnConfig, mode string) {
-	switch mode {
-	case config.StatementCacheModeDescribe:
-		// DescribeExec: type info is fetched once per statement shape without
-		// registering a named prepared statement on the backend.
-		connCfg.DefaultQueryExecMode = pgx.QueryExecModeDescribeExec
-		connCfg.StatementCacheCapacity = 0
-	case config.StatementCacheModeSimple:
-		// SimpleProtocol: no extended query protocol; fully text-mode.
-		connCfg.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
-		connCfg.StatementCacheCapacity = 0
-	default:
-		// "prepare" or empty — standard pgx caching.
-		connCfg.DefaultQueryExecMode = pgx.QueryExecModeCacheStatement
+type queryStartTimeKey struct{}
+
+type timingTracer struct{}
+
+func (t *timingTracer) TraceQueryStart(ctx context.Context, _ *pgx.Conn, _ pgx.TraceQueryStartData) context.Context {
+	return context.WithValue(ctx, queryStartTimeKey{}, time.Now())
+}
+
+func (t *timingTracer) TraceQueryEnd(ctx context.Context, _ *pgx.Conn, _ pgx.TraceQueryEndData) {
+	startVal := ctx.Value(queryStartTimeKey{})
+	if start, ok := startVal.(time.Time); ok {
+		if rec := middleware.RecorderFromContext(ctx); rec != nil {
+			rec.RecordDB(time.Since(start))
+		}
 	}
 }
 
