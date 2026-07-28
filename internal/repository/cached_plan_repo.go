@@ -174,28 +174,26 @@ func (cpr *CachedPlanRepo) List(ctx context.Context) ([]*PlanRow, error) {
 	return out, nil
 }
 
-// Delete invalidates a cached plan entry and records the invalidation time.
-func (cpr *CachedPlanRepo) Flush(ctx context.Context) (int, error) {
-	if cpr.cache == nil {
-		return 0, nil
+// Update delegates to backend and invalidates cache.
+func (cpr *CachedPlanRepo) Update(ctx context.Context, plan *PlanRow, expectedVersion int64) error {
+	if err := cpr.backend.Update(ctx, plan, expectedVersion); err != nil {
+		return err
 	}
-	if err := cpr.cache.Delete(ctx, cpr.listKey()); err != nil {
-		return 0, err
+	_ = cpr.invalidate(ctx, plan.ID)
+	return nil
+}
+
+// Delete delegates to backend and invalidates cache.
+func (cpr *CachedPlanRepo) Delete(ctx context.Context, id string, expectedVersion int64) error {
+	if err := cpr.backend.Delete(ctx, id, expectedVersion); err != nil {
+		return err
 	}
-	return 0, nil
+	_ = cpr.invalidate(ctx, id)
+	return nil
 }
 
-func (cpr *CachedPlanRepo) ResetMetrics() {
-	atomic.StoreUint64(&cpr.hits, 0)
-	atomic.StoreUint64(&cpr.misses, 0)
-	atomic.StoreUint64(&cpr.stales, 0)
-}
-
-func (cpr *CachedPlanRepo) Namespace() string {
-	return "plans"
-}
-
-func (cpr *CachedPlanRepo) Delete(ctx context.Context, id string) error {
+// invalidate invalidates a cached plan entry and records the invalidation time.
+func (cpr *CachedPlanRepo) invalidate(ctx context.Context, id string) error {
 	if cpr.cache == nil {
 		return nil
 	}
