@@ -98,6 +98,8 @@ func WebhookVerification(secret string) gin.HandlerFunc {
 	}
 }
 
+
+
 var (
 	ErrInvalidSignature      = errors.New("invalid webhook signature")
 	ErrMissingSignature      = errors.New("missing webhook signature")
