@@ -60,6 +60,26 @@ sbom: sbom-install  ## Generate a CycloneDX SBOM for the Go module
 		"dir:."
 	@echo "SBOM written to $(SBOM_FILE)"
 
+# ── Gitleaks / Secret Scanning ───────────────────────────────────────────────
+
+.PHONY: gitleaks-scan gitleaks-scan-staged gitleaks-install-hooks
+
+GITLEAKS_VERSION ?= 8.18.2
+GITLEAKS_BIN ?= $(shell command -v gitleaks 2>/dev/null || echo "")
+
+gitleaks-scan:  ## Scan the full git history for secrets
+	$(if $(GITLEAKS_BIN),,$(error gitleaks not found — install from https://github.com/gitleaks/gitleaks))
+	gitleaks detect --source . --config .gitleaks.toml --verbose --no-banner
+
+gitleaks-scan-staged:  ## Scan only staged changes (fast pre-commit check)
+	$(if $(GITLEAKS_BIN),,$(error gitleaks not found — install from https://github.com/gitleaks/gitleaks))
+	gitleaks protect --source . --config .gitleaks.toml --staged --verbose --no-banner
+
+gitleaks-install-hooks:  ## Install gitleaks pre-commit hook
+	scripts/install-gitleaks-hook.sh
+
+# ── SBOM ──────────────────────────────────────────────────────────────────────
+
 sbom-verify: sbom  ## Validate the generated SBOM
 	@test -s "$(SBOM_FILE)" || { echo "FAIL: $(SBOM_FILE) not found or empty"; exit 1; }
 	@test "$$(python3 -c "import json,sys; d=json.load(open('$(SBOM_FILE)')); sys.exit(0 if d.get('bomFormat')=='CycloneDX' else 1)")" \
