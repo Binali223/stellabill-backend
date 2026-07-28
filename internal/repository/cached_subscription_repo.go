@@ -179,13 +179,31 @@ func (csr *CachedSubscriptionRepo) UpdateStatus(ctx context.Context, id string, 
 	if err := csr.backend.UpdateStatus(ctx, id, tenantID, status); err != nil {
 		return err
 	}
-	_ = csr.Delete(ctx, id, tenantID)
+	_ = csr.invalidate(ctx, id, tenantID)
 	return nil
 }
 
-// Delete removes cached entries for a subscription and records invalidation times.
+// Update delegates to backend and invalidates cache.
+func (csr *CachedSubscriptionRepo) Update(ctx context.Context, sub *SubscriptionRow, expectedVersion int64) error {
+	if err := csr.backend.Update(ctx, sub, expectedVersion); err != nil {
+		return err
+	}
+	_ = csr.invalidate(ctx, sub.ID, sub.TenantID)
+	return nil
+}
+
+// Delete delegates to backend and invalidates cache.
+func (csr *CachedSubscriptionRepo) Delete(ctx context.Context, id string, tenantID string, expectedVersion int64) error {
+	if err := csr.backend.Delete(ctx, id, tenantID, expectedVersion); err != nil {
+		return err
+	}
+	_ = csr.invalidate(ctx, id, tenantID)
+	return nil
+}
+
+// invalidate removes cached entries for a subscription and records invalidation times.
 // It clears both the by-id and by-id-and-tenant keys.
-func (csr *CachedSubscriptionRepo) Delete(ctx context.Context, id string, tenantID string) error {
+func (csr *CachedSubscriptionRepo) invalidate(ctx context.Context, id string, tenantID string) error {
 	if csr.cache == nil {
 		return nil
 	}
@@ -201,37 +219,6 @@ func (csr *CachedSubscriptionRepo) Delete(ctx context.Context, id string, tenant
 	csr.invalidatedAt[tenantKey] = now
 	csr.invalidatedMu.Unlock()
 	return nil
-}
-
-// Flush implements cache.Purgeable.
-func (csr *CachedSubscriptionRepo) Flush(ctx context.Context) (int, error) {
-	csr.invalidatedMu.Lock()
-	count := len(csr.invalidatedAt)
-	now := time.Now()
-
-	if csr.cache != nil {
-		for k := range csr.invalidatedAt {
-			_ = csr.cache.Delete(ctx, k)
-		}
-	}
-
-	for k := range csr.invalidatedAt {
-		csr.invalidatedAt[k] = now
-	}
-	csr.invalidatedMu.Unlock()
-	return count, nil
-}
-
-// ResetMetrics implements cache.Purgeable.
-func (csr *CachedSubscriptionRepo) ResetMetrics() {
-	atomic.StoreUint64(&csr.hits, 0)
-	atomic.StoreUint64(&csr.misses, 0)
-	atomic.StoreUint64(&csr.stales, 0)
-}
-
-// Namespace implements cache.Purgeable.
-func (csr *CachedSubscriptionRepo) Namespace() string {
-	return "subscriptions"
 }
 
 // Metrics returns hit/miss/stale counters for testing/monitoring.
