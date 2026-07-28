@@ -30,3 +30,9 @@ tmp
 
 # Built binary (regenerated in Dockerfile).
 stellarbill-backend
+.git
+.github
+docs
+*.md
+LICENSE
+Makefile
