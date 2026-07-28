@@ -214,8 +214,9 @@ func RegisterWithCleanup(r *gin.Engine) func(context.Context) error {
 	api.GET("/liveness", h.LivenessProbe)
 	api.GET("/readiness", h.ReadinessProbe)
 
-	// Build info endpoint for incident triage across canaries.
-	r.GET("/internal/buildinfo", h.BuildInfo)
+	// Idempotency key inspection — lets callers query the state of any key they
+	// own without triggering the mutation-only Idempotency middleware.
+	idemHandler := handlers.NewIdempotencyHandler(idemStore)
 
 	// V1 routes are all protected
 	v1.Use(authMiddleware)
@@ -227,6 +228,8 @@ func RegisterWithCleanup(r *gin.Engine) func(context.Context) error {
 		v1.GET("/plans", auth.RequirePermission(auth.PermReadPlans), h.ListPlans)
 		v1.GET("/statements/:id", auth.RequirePermission(auth.PermReadSubscriptions), handlers.NewGetStatementHandler(stmtSvc))
 		v1.GET("/statements", auth.RequirePermission(auth.PermReadSubscriptions), handlers.NewListStatementsHandler(stmtSvc))
+		// Idempotency key inspection — tenant-scoped, read-only.
+		v1.GET("/idempotency/:key", idemHandler.InspectKey)
 	}
 
 	// Legacy /api routes - also protected
