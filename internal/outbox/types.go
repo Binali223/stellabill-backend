@@ -49,6 +49,9 @@ type EventData struct {
 	SubscriberID string      `json:"subscriber_id,omitempty"`
 }
 
+// OutboxEvent is the public event type used by the router and publisher layers.
+type OutboxEvent = Event
+
 // Publisher interface for event publishing
 type Publisher interface {
 	Publish(ctx context.Context, event *Event) error

@@ -360,7 +360,12 @@ func TestAdminPurge_PartialFailure(t *testing.T) {
 
 	nsMap := make(map[string]namespaceSummary)
 	for _, ns := range resp.Namespaces {
-		nsMap[ns.Namespace] = ns
+		nsMap[ns.Namespace] = namespaceSummary{
+			Namespace:     ns.Namespace,
+			KeysPurged:    ns.KeysPurged,
+			CountersReset: ns.CountersReset,
+			Error:         ns.Error,
+		}
 	}
 	if nsMap["plans"].KeysPurged != 3 {
 		t.Fatalf("plans: expected 3 keys purged, got %d", nsMap["plans"].KeysPurged)
@@ -489,9 +494,9 @@ func TestAdminPurge_WithRealRepos(t *testing.T) {
 	if h2 != 0 || m2 != 0 {
 		t.Fatalf("plan metrics not reset: hits=%d misses=%d", h2, m2)
 	}
-	h3, m3 := cachedSubs.Metrics()
-	if h3 != 0 || m3 != 0 {
-		t.Fatalf("sub metrics not reset: hits=%d misses=%d", h3, m3)
+	h3, m3, s3 := cachedSubs.Metrics()
+	if h3 != 0 || m3 != 0 || s3 != 0 {
+		t.Fatalf("sub metrics not reset: hits=%d misses=%d stales=%d", h3, m3, s3)
 	}
 
 	// Subsequent reads re-populate from backend (no stale data)
