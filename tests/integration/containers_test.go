@@ -35,8 +35,30 @@ func TestMain(m *testing.M) {
 
 func TestContainerFactoryRejectsIncompleteSpecs(t *testing.T) {
 	t.Parallel()
-	_, _, err := StartContainer(context.Background(), ContainerSpec{})
-	require.Error(t, err)
+	valid := ContainerSpec{
+		Name:         "valid",
+		Image:        "example.invalid/image:1",
+		Port:         "8080/tcp",
+		WaitStrategy: wait.ForListeningPort("8080/tcp"),
+	}
+	tests := []struct {
+		name   string
+		mutate func(*ContainerSpec)
+	}{
+		{name: "missing name", mutate: func(spec *ContainerSpec) { spec.Name = "" }},
+		{name: "missing image", mutate: func(spec *ContainerSpec) { spec.Image = "" }},
+		{name: "missing port", mutate: func(spec *ContainerSpec) { spec.Port = "" }},
+		{name: "missing wait strategy", mutate: func(spec *ContainerSpec) { spec.WaitStrategy = nil }},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			spec := valid
+			test.mutate(&spec)
+			_, _, err := StartContainer(context.Background(), spec)
+			require.Error(t, err)
+		})
+	}
 }
 
 func TestContainerFactoryAllocatesDistinctHostPorts(t *testing.T) {

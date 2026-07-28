@@ -119,7 +119,8 @@ go test -tags integration -v -race -count=1 -timeout 5m ./tests/integration/...
 The suite creates one stack and shares it between tests (`Reuse: true`).
 Docker assigns every host port, so parallel test processes do not contend for
 5432, 6379, or 8080. Postgres and Redis credentials are generated for each
-run; the services are not bound to predictable host ports.
+run. All mapped ports bind to `127.0.0.1`, so the test services are not exposed
+to the local network.
 
 Ryuk removes leaked containers after interrupted runs and should remain
 enabled on developer machines and CI. Only set
@@ -127,6 +128,10 @@ enabled on developer machines and CI. Only set
 the Docker socket policy prevents Ryuk from running and an external cleanup
 job is guaranteed. Disabling Ryuk on a shared Docker host can leave containers,
 credentials, and consumed resources behind.
+
+The images use explicit version tags. Review and update those versions
+deliberately; do not replace them with `latest`. The mock webhook receiver is
+for local test payloads only and must never receive production secrets or PII.
 
 ### 4.3 Race detector
 

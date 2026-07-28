@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/go-connections/nat"
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 	"github.com/testcontainers/testcontainers-go"
@@ -47,6 +49,13 @@ func StartContainer(ctx context.Context, spec ContainerSpec) (testcontainers.Con
 			Env:          spec.Environment,
 			Cmd:          spec.Command,
 			WaitingFor:   spec.WaitStrategy,
+			HostConfigModifier: func(hostConfig *container.HostConfig) {
+				// Do not expose integration services to the LAN. An empty
+				// HostPort still asks Docker to allocate a collision-free port.
+				hostConfig.PortBindings = nat.PortMap{
+					nat.Port(spec.Port): {{HostIP: "127.0.0.1"}},
+				}
+			},
 		},
 		Started: true,
 		Reuse:   true,
@@ -179,7 +188,8 @@ func (s *IntegrationStack) PingWebhook(ctx context.Context) error {
 		return err
 	}
 	request.Header.Set("Content-Type", "application/json")
-	response, err := http.DefaultClient.Do(request)
+	client := &http.Client{Timeout: 10 * time.Second}
+	response, err := client.Do(request)
 	if err != nil {
 		return err
 	}
