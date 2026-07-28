@@ -11,6 +11,25 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var planRepository repository.PlanRepository
+
+func SetPlanRepository(repo repository.PlanRepository) {
+	planRepository = repo
+}
+
+func ListPlans(c *gin.Context) {
+	if planRepository == nil {
+		c.JSON(http.StatusOK, gin.H{"plans": []interface{}{}})
+		return
+	}
+	plans, err := planRepository.List(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"plans": plans})
+}
+
 type mockPlanRepo struct {
 	plans []*repository.PlanRow
 }

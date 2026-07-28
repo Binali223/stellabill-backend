@@ -41,6 +41,7 @@ import (
 	"stellarbill-backend/internal/repository"
 	"stellarbill-backend/internal/service"
 	"testing"
+	"time"
 	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
@@ -109,6 +110,16 @@ func (s *stubStatementService) ListByCustomer(
 		})
 	}
 	return &service.ListStatementsDetail{Statements: stmts}, limit, nil, nil
+}
+
+func (s *stubStatementService) ExportStatements(
+	_ context.Context,
+	_ string,
+	_ []string,
+	_, _ string,
+	_ s3.S3Uploader,
+) (*service.ExportResult, error) {
+	return &service.ExportResult{ObjectKey: "stub", URL: "https://example.invalid/export", ExpiresAt: time.Now().UTC()}, nil
 }
 
 // ── Helper: set auth context ──────────────────────────────────────────────────
