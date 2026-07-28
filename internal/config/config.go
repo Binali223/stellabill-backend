@@ -63,8 +63,10 @@ type Config struct {
 	TracingExporter        string
 	TracingServiceName     string
 	SecurityFrameAncestors string
-	SpiffeSocketPath   string
-	SpiffeTrustDomain  string
+	SpiffeSocketPath       string
+	SpiffeTrustDomain      string
+	APISpiffeID            string
+	WorkerSpiffeID         string
 	MaxRequestSize         int64
 	MaxGzipUncompressed    int64
 	MaxGzipRatio           float64
@@ -264,6 +266,10 @@ func Load(opts ...Option) (Config, error) {
 		PgBouncerPort:            DefaultPgBouncerPort,
 		DBStatementCacheMode:     DefaultDBStatementCacheMode,
 		PgBouncerIdleInTxTimeout: DefaultPgBouncerIdleInTxTimeout,
+		// SPIRE/SPIFFE security configuration
+		SpireSocketPath: getEnv("SPIRE_SOCKET_PATH", "unix:///run/spire/sockets/agent.sock"),
+		APISpiffeID:     getEnv("API_SPIFFE_ID", "spiffe://stellabill.internal/api"),
+		WorkerSpiffeID:  getEnv("WORKER_SPIFFE_ID", "spiffe://stellabill.internal/worker"),
 	}
 
 	// Resolve secrets through the provider
