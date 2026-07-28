@@ -21,6 +21,12 @@ docs-lint: ## Validate ADR template, unique numbers, and index freshness
 	go run ./cmd/adr-lint -check-index
 	go test ./internal/adr/... -count=1 -cover
 
+# ── Deploy assets (image signing / Kyverno policy) ────────────────────────────
+
+.PHONY: validate-deploy
+validate-deploy: ## Static invariants check for release workflow + Kyverno policy
+	go test ./internal/deploylint/... -count=1 -v
+
 # ── Mutation testing ──────────────────────────────────────────────────────────
 
 .PHONY: mutation-state-machine
