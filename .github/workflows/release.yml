@@ -1,0 +1,119 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write   # needed for cosign keyless signing
+
+env:
+  SBOM_FILE: sbom.json
+  SBOM_FORMAT: cyclonedx-json
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build binary
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/}"
+          CGO_ENABLED=0 go build -trimpath \
+            -ldflags="-s -w -X main.version=${VERSION}" \
+            -o stellarbill-backend \
+            ./cmd/server
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: stellarbill-backend
+          path: stellarbill-backend
+
+  sbom:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install syft
+        uses: anchore/sbom-action/download-syft@v0
+        with:
+          syft-version: latest
+
+      - name: Generate CycloneDX SBOM
+        run: syft -o "${SBOM_FORMAT}=${SBOM_FILE}" "dir:."
+
+      - name: Validate SBOM
+        run: |
+          test -s "${SBOM_FILE}"
+          python3 -c "
+          import json, sys
+          with open('${SBOM_FILE}') as f:
+              d = json.load(f)
+          assert d.get('bomFormat') == 'CycloneDX', f'wrong bomFormat: {d.get(\"bomFormat\")}'
+          comps = d.get('components', [])
+          print(f'SBOM contains {len(comps)} components')
+          assert len(comps) > 0, 'no components found'
+          # Verify Go module graph is present
+          go_mods = [c for c in comps if c.get('purl', '').startswith('pkg:go/')]
+          os_pkgs = [c for c in comps if c.get('purl', '').startswith('pkg:deb/') or c.get('purl', '').startswith('pkg:apk/')]
+          print(f'Go modules: {len(go_mods)}, OS packages: {len(os_pkgs)}')
+          assert len(go_mods) > 0, 'no Go modules in SBOM'
+          print('PASS: SBOM validation passed')
+          "
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign SBOM with cosign (keyless)
+        run: cosign sign-blob --yes --output-signature "${SBOM_FILE}.sig" --output-certificate "${SBOM_FILE}.cert" "${SBOM_FILE}"
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: |
+            sbom.json
+            sbom.json.sig
+            sbom.json.cert
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [build, sbom]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download binary
+        uses: actions/download-artifact@v4
+        with:
+          name: stellarbill-backend
+
+      - name: Download SBOM
+        uses: actions/download-artifact@v4
+        with:
+          name: sbom
+
+      - name: Make binary executable
+        run: chmod +x stellarbill-backend
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            stellarbill-backend
+            sbom.json
+            sbom.json.sig
+            sbom.json.cert

@@ -39,6 +39,17 @@ jobs:
           raise SystemExit(0 if total >= 95.0 else 1)
           PY
 
+  sbom-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install syft
+        uses: anchore/sbom-action/download-syft@v0
+        with:
+          syft-version: latest
+      - name: Generate and validate SBOM
+        run: bash scripts/test_sbom.sh
+
   benchmark-thresholds:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
