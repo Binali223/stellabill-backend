@@ -5,20 +5,6 @@ on:
   pull_request:
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: true
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: v2.2.1
-          args: --timeout=5m
-
   test:
     runs-on: ubuntu-latest
     steps:
@@ -33,6 +19,8 @@ jobs:
         run: go run ./cmd/openapi-validate
       - name: Migration Safety Validation
         run: go run ./cmd/validate-migrations
+      - name: ADR lint (unique numbers + index)
+        run: make docs-lint
       - name: Coverage (>= 95% for non-cmd packages)
         shell: bash
         run: |

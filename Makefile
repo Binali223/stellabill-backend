@@ -1,6 +1,16 @@
 GOPATH := $(shell go env GOPATH)
 MUTEST := $(GOPATH)/bin/go-mutesting
 
+# ── Docs / ADRs ───────────────────────────────────────────────────────────────
+
+.PHONY: adr-index docs-lint
+adr-index: ## Regenerate docs/adr/README.md from ADR files
+	go run ./cmd/adr-lint -write-index -check-index=false
+
+docs-lint: ## Validate ADR template, unique numbers, and index freshness
+	go run ./cmd/adr-lint -check-index
+	go test ./internal/adr/... -count=1 -cover
+
 # ── Mutation testing ──────────────────────────────────────────────────────────
 
 .PHONY: mutation-state-machine
