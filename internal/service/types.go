@@ -93,24 +93,28 @@ type SubscriptionStatusChange struct {
 	Changed        bool   `json:"changed"`
 }
 
-// BatchSubscriptionOperation describes a single item in a bulk subscription mutation request.
+// BatchSubscriptionOperation represents a single subscription mutation within a batch request.
 type BatchSubscriptionOperation struct {
-	ID             string `json:"id"`
+	IdempotencyKey string `json:"idempotency_key"`
+	SubscriptionID string `json:"subscription_id"`
 	Status         string `json:"status"`
-	IdempotencyKey string `json:"idempotency_key,omitempty"`
 }
 
-// BatchSubscriptionError captures a per-item failure in a bulk subscription request.
-type BatchSubscriptionError struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-}
-
-// BatchSubscriptionResult is the per-item outcome for a bulk subscription mutation.
+// BatchSubscriptionResult captures the per-item outcome of a batch request.
 type BatchSubscriptionResult struct {
-	ID             string                  `json:"id"`
-	Status         string                  `json:"status,omitempty"`
-	Success        bool                    `json:"success"`
-	IdempotencyKey string                  `json:"idempotency_key,omitempty"`
-	Error          *BatchSubscriptionError `json:"error,omitempty"`
+	Index      int    `json:"index"`
+	StatusCode int    `json:"status_code"`
+	Message    string `json:"message"`
+	ID         string `json:"id,omitempty"`
 }
+
+// BatchSubscriptionRequest is the payload accepted by the bulk endpoint.
+type BatchSubscriptionRequest struct {
+	Operations []BatchSubscriptionOperation `json:"operations"`
+}
+
+// BatchSubscriptionResponse bundles the per-item outcomes of a batch request.
+type BatchSubscriptionResponse struct {
+	Results []BatchSubscriptionResult `json:"results"`
+}
+

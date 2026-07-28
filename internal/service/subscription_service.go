@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -12,6 +13,8 @@ import (
 	"stellarbill-backend/internal/subscriptions"
 	"stellarbill-backend/internal/timeutil"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -20,11 +23,16 @@ import (
 
 var tracer = otel.Tracer("service/subscriptions")
 
+var batchOpsTotal = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "batch_ops_total",
+	Help: "Total number of bulk subscription operations processed by outcome.",
+}, []string{"outcome"})
+
 // SubscriptionService defines the business logic interface for subscriptions.
 type SubscriptionService interface {
 	GetDetail(ctx context.Context, tenantID string, callerID string, subscriptionID string) (*SubscriptionDetail, []string, error)
 	ChangeStatus(ctx context.Context, tenantID string, actorID string, subscriptionID string, targetStatus string) (*SubscriptionStatusChange, error)
-	BatchChangeStatus(ctx context.Context, tenantID string, actorID string, operations []BatchSubscriptionOperation) ([]BatchSubscriptionResult, error)
+	ProcessBatch(ctx context.Context, tenantID string, actorID string, operations []BatchSubscriptionOperation) ([]BatchSubscriptionResult, error)
 }
 
 // subscriptionService is the concrete implementation of SubscriptionService.
@@ -190,66 +198,55 @@ func (s *subscriptionService) ChangeStatus(ctx context.Context, tenantID string,
 	}, nil
 }
 
-func (s *subscriptionService) BatchChangeStatus(ctx context.Context, tenantID string, actorID string, operations []BatchSubscriptionOperation) ([]BatchSubscriptionResult, error) {
-	if len(operations) == 0 {
-		return nil, fmt.Errorf("batch operations must not be empty")
+// ProcessBatch applies a set of status-change operations to a tenant-scoped subscription set.
+// Each item requires a unique idempotency key and partial failures are reported individually.
+func (s *subscriptionService) ProcessBatch(ctx context.Context, tenantID string, actorID string, operations []BatchSubscriptionOperation) ([]BatchSubscriptionResult, error) {
+	if len(operations) > 100 {
+		return nil, fmt.Errorf("batch size exceeds limit of 100")
 	}
 
 	results := make([]BatchSubscriptionResult, 0, len(operations))
-	for _, op := range operations {
-		result := BatchSubscriptionResult{
-			ID:             op.ID,
-			IdempotencyKey: op.IdempotencyKey,
-		}
-
-		if strings.TrimSpace(op.ID) == "" {
-			result.Success = false
-			result.Error = &BatchSubscriptionError{Code: "VALIDATION_FAILED", Message: "subscription id is required"}
-			results = append(results, result)
-			continue
-		}
-
-		if strings.TrimSpace(op.Status) == "" {
-			result.Success = false
-			result.Error = &BatchSubscriptionError{Code: "VALIDATION_FAILED", Message: "status is required"}
-			results = append(results, result)
-			continue
-		}
-
+	for idx, op := range operations {
 		if strings.TrimSpace(op.IdempotencyKey) == "" {
-			result.Success = false
-			result.Error = &BatchSubscriptionError{Code: "VALIDATION_FAILED", Message: "idempotency_key is required"}
-			results = append(results, result)
+			results = append(results, BatchSubscriptionResult{Index: idx, StatusCode: http.StatusBadRequest, Message: "idempotency_key is required"})
+			batchOpsTotal.WithLabelValues("validation_error").Inc()
+			continue
+		}
+		if strings.TrimSpace(op.SubscriptionID) == "" {
+			results = append(results, BatchSubscriptionResult{Index: idx, StatusCode: http.StatusBadRequest, Message: "subscription_id is required"})
+			batchOpsTotal.WithLabelValues("validation_error").Inc()
+			continue
+		}
+		if !subscriptions.IsKnownStatus(op.Status) {
+			results = append(results, BatchSubscriptionResult{Index: idx, StatusCode: http.StatusUnprocessableEntity, Message: fmt.Sprintf("invalid status %q", op.Status)})
+			batchOpsTotal.WithLabelValues("validation_error").Inc()
 			continue
 		}
 
-		change, err := s.ChangeStatus(ctx, tenantID, actorID, op.ID, op.Status)
+		change, err := s.ChangeStatus(ctx, tenantID, actorID, op.SubscriptionID, op.Status)
 		if err != nil {
-			result.Success = false
-			result.Error = &BatchSubscriptionError{Code: batchErrorCode(err), Message: err.Error()}
-			results = append(results, result)
+			statusCode := http.StatusInternalServerError
+			message := err.Error()
+			switch {
+			case errors.Is(err, ErrNotFound):
+				statusCode = http.StatusNotFound
+			case errors.Is(err, ErrDeleted):
+				statusCode = http.StatusGone
+			case errors.Is(err, ErrForbidden):
+				statusCode = http.StatusForbidden
+			case errors.Is(err, ErrInvalidTransition), errors.Is(err, ErrUnknownCurrentState), errors.Is(err, ErrInvalidStatus):
+				statusCode = http.StatusConflict
+			default:
+				statusCode = http.StatusInternalServerError
+			}
+			results = append(results, BatchSubscriptionResult{Index: idx, StatusCode: statusCode, Message: message})
+			batchOpsTotal.WithLabelValues("error").Inc()
 			continue
 		}
 
-		result.Success = true
-		result.Status = change.Status
-		results = append(results, result)
+		results = append(results, BatchSubscriptionResult{Index: idx, StatusCode: http.StatusOK, Message: "ok", ID: change.ID})
+		batchOpsTotal.WithLabelValues("success").Inc()
 	}
 
 	return results, nil
-}
-
-func batchErrorCode(err error) string {
-	switch {
-	case errors.Is(err, ErrInvalidStatus):
-		return "VALIDATION_FAILED"
-	case errors.Is(err, ErrInvalidTransition), errors.Is(err, ErrUnknownCurrentState):
-		return "CONFLICT"
-	case errors.Is(err, ErrNotFound), errors.Is(err, ErrDeleted):
-		return "NOT_FOUND"
-	case errors.Is(err, ErrForbidden):
-		return "FORBIDDEN"
-	default:
-		return "INTERNAL_ERROR"
-	}
 }
