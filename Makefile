@@ -23,6 +23,16 @@ docs-lint: ## Validate ADR template, unique numbers, and index freshness
 
 # ── Mutation testing ──────────────────────────────────────────────────────────
 
+.PHONY: test-coverage
+test-coverage:
+	go test -coverprofile=coverage.out ./...
+	@COVERAGE=$$(go tool cover -func=coverage.out | grep total: | awk '{print $$3}' | tr -d '%'); \
+	echo "Total Coverage: $$COVERAGE%"; \
+	if [ 1 -eq "$$(echo "$$COVERAGE < 95.0" | bc)" ]; then \
+		echo "Coverage is below the 95% threshold! Failing build."; \
+		exit 1; \
+	fi
+
 .PHONY: mutation-state-machine
 mutation-state-machine: $(MUTEST)  ## Run mutation tests on the subscription state machine
 	$(MUTEST) ./internal/subscriptions/...
