@@ -2,6 +2,13 @@
 
 Go (Gin) API backend for Stellabill - subscription and billing plans API. This repo is backend-only; a separate frontend consumes these APIs.
 
+[![CI](https://github.com/Stellabill/stellabill-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/Stellabill/stellabill-backend/actions/workflows/ci.yml)
+
+| Go \ Postgres | 15 | 16 | 17 |
+|:---:|:---:|:---:|:---:|
+| **1.22** | [![test](https://github.com/Stellabill/stellabill-backend/actions/workflows/ci.yml/badge.svg?branch=main&job=test)](https://github.com/Stellabill/stellabill-backend/actions/workflows/ci.yml) | [![test](https://github.com/Stellabill/stellabill-backend/actions/workflows/ci.yml/badge.svg?branch=main&job=test)](https://github.com/Stellabill/stellabill-backend/actions/workflows/ci.yml) | [![test](https://github.com/Stellabill/stellabill-backend/actions/workflows/ci.yml/badge.svg?branch=main&job=test)](https://github.com/Stellabill/stellabill-backend/actions/workflows/ci.yml) |
+| **1.23** | [![test](https://github.com/Stellabill/stellabill-backend/actions/workflows/ci.yml/badge.svg?branch=main&job=test)](https://github.com/Stellabill/stellabill-backend/actions/workflows/ci.yml) | [![test](https://github.com/Stellabill/stellabill-backend/actions/workflows/ci.yml/badge.svg?branch=main&job=test)](https://github.com/Stellabill/stellabill-backend/actions/workflows/ci.yml) | [![test](https://github.com/Stellabill/stellabill-backend/actions/workflows/ci.yml/badge.svg?branch=main&job=test)](https://github.com/Stellabill/stellabill-backend/actions/workflows/ci.yml) |
+
 ---
 
 ## Table of contents
@@ -254,6 +261,19 @@ router.GET("/feature", middleware.RequireAnyFeatureFlags("flag1", "flag2"), hand
 > See **[docs/dev-test-guide.md](docs/dev-test-guide.md)** for the full local
 > development and test execution guide, including common failure
 > troubleshooting.
+
+### CI matrix
+
+CI runs a **Go x Postgres** matrix on every push and PR:
+
+| Go \ Postgres | 15 | 16 | 17 |
+|:---:|:---:|:---:|:---:|
+| **1.22** | ✅ | ✅ | ✅ |
+| **1.23** | ✅ | ✅ | ✅ |
+
+Each matrix cell publishes a JUnit XML report as a build artifact. Lint and
+formatting checks run once (not per matrix cell). Coverage is enforced at
+**>= 95%** for non-cmd packages.
 
 ### Unit tests
 
