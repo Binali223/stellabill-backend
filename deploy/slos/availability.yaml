@@ -1,0 +1,12 @@
+name: API_Availability
+objective: 99.9
+description: "API must be highly available."
+labels:
+  service: stellabill-api
+numerator: 'sum(rate(http_requests_total{status=~"5.."}[{{.window}}]))'
+denominator: 'sum(rate(http_requests_total[{{.window}}]))'
+windows:
+  - fast: "1h"
+    slow: "6h"
+  - fast: "5m"
+    slow: "30m"
