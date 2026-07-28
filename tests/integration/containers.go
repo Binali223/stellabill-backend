@@ -25,6 +25,7 @@ const startupTimeout = 90 * time.Second
 // dependency. Host ports are intentionally omitted so Docker always selects an
 // available port, including when multiple test processes run in parallel.
 type ContainerSpec struct {
+	Name         string
 	Image        string
 	Port         string
 	Environment  map[string]string
@@ -34,12 +35,13 @@ type ContainerSpec struct {
 
 // StartContainer creates a reusable container from a small, reviewable spec.
 func StartContainer(ctx context.Context, spec ContainerSpec) (testcontainers.Container, string, error) {
-	if spec.Image == "" || spec.Port == "" || spec.WaitStrategy == nil {
-		return nil, "", fmt.Errorf("container image, port, and wait strategy are required")
+	if spec.Name == "" || spec.Image == "" || spec.Port == "" || spec.WaitStrategy == nil {
+		return nil, "", fmt.Errorf("container name, image, port, and wait strategy are required")
 	}
 
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
+			Name:         spec.Name,
 			Image:        spec.Image,
 			ExposedPorts: []string{spec.Port},
 			Env:          spec.Environment,
@@ -78,6 +80,11 @@ func StartIntegrationStack(ctx context.Context) (*IntegrationStack, error) {
 	if err != nil {
 		return nil, err
 	}
+	runID, err := randomSecret()
+	if err != nil {
+		return nil, err
+	}
+	runID = runID[:12]
 
 	stack := &IntegrationStack{}
 	start := func(spec ContainerSpec) (string, error) {
@@ -89,6 +96,7 @@ func StartIntegrationStack(ctx context.Context) (*IntegrationStack, error) {
 	}
 
 	pgEndpoint, err := start(ContainerSpec{
+		Name:  "stellabill-integration-postgres-" + runID,
 		Image: "postgres:16.9-alpine",
 		Port:  "5432/tcp",
 		Environment: map[string]string{
@@ -113,6 +121,7 @@ func StartIntegrationStack(ctx context.Context) (*IntegrationStack, error) {
 	stack.PostgresURL = pgURL.String()
 
 	redisEndpoint, err := start(ContainerSpec{
+		Name:         "stellabill-integration-redis-" + runID,
 		Image:        "redis:7.4.5-alpine",
 		Port:         "6379/tcp",
 		Command:      []string{"redis-server", "--save", "", "--appendonly", "no", "--requirepass", redisPassword},
@@ -126,6 +135,7 @@ func StartIntegrationStack(ctx context.Context) (*IntegrationStack, error) {
 	stack.RedisURL = redisURL.String()
 
 	webhookEndpoint, err := start(ContainerSpec{
+		Name:         "stellabill-integration-webhook-" + runID,
 		Image:        "mendhak/http-https-echo:35",
 		Port:         "8080/tcp",
 		WaitStrategy: wait.ForHTTP("/").WithPort("8080/tcp").WithStartupTimeout(startupTimeout),

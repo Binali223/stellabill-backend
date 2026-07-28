@@ -43,8 +43,13 @@ func TestContainerFactoryAllocatesDistinctHostPorts(t *testing.T) {
 	t.Parallel()
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
+	firstID, err := randomSecret()
+	require.NoError(t, err)
+	secondID, err := randomSecret()
+	require.NoError(t, err)
 
 	first, firstEndpoint, err := StartContainer(ctx, ContainerSpec{
+		Name:  "stellabill-port-test-" + firstID[:12],
 		Image: "mendhak/http-https-echo:35", Port: "8080/tcp",
 		WaitStrategy: wait.ForHTTP("/").WithPort("8080/tcp").WithStartupTimeout(startupTimeout),
 	})
@@ -52,6 +57,7 @@ func TestContainerFactoryAllocatesDistinctHostPorts(t *testing.T) {
 	t.Cleanup(func() { _ = first.Terminate(context.Background()) })
 
 	second, secondEndpoint, err := StartContainer(ctx, ContainerSpec{
+		Name:  "stellabill-port-test-" + secondID[:12],
 		Image: "mendhak/http-https-echo:35", Port: "8080/tcp",
 		WaitStrategy: wait.ForHTTP("/").WithPort("8080/tcp").WithStartupTimeout(startupTimeout),
 	})
