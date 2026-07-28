@@ -6,11 +6,10 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/integrations/pagerduty"
 	"strings"
 	"testing"
 	"time"
-
-	"stellarbill-backend/internal/integrations/pagerduty"
 )
 
 // roundTripFunc allows using a plain func as an HTTPClient.
@@ -32,7 +31,6 @@ func TestTrigger_Success(t *testing.T) {
 
 	c := pagerduty.NewWithHTTP("key1", srv.URL, srv.Client())
 	err := c.Trigger(context.Background(), "dedup-1", "test summary", pagerduty.SeverityCritical, map[string]any{"count": 7})
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

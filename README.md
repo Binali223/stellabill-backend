@@ -573,7 +573,7 @@ We welcome contributions from the community. Below is a short guide to get you f
 
 ### Project standards
 
-- **Go:** `go fmt`, `go vet`, no unnecessary dependencies.
+- **Go:** We use `gofumpt` as the canonical formatter. Run `make fmt` before committing. Ensure your editor is configured to use `gofumpt` instead of `gofmt` (e.g., via `gopls` settings). `go vet`, no unnecessary dependencies.
 - **APIs:** Keep JSON shape stable; document breaking changes in PRs.
 - **Secrets:** Never commit `.env`, keys, or passwords.
 

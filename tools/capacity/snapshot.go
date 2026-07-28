@@ -32,7 +32,8 @@ func ParseSnapshotFromScanner(r interface {
 	Scan() bool
 	Text() string
 	Err() error
-}) (Snapshot, error) {
+},
+) (Snapshot, error) {
 	var points []MetricPoint
 	for r.Scan() {
 		line := strings.TrimSpace(r.Text())

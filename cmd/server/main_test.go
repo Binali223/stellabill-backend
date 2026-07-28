@@ -7,14 +7,13 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"stellarbill-backend/internal/config"
+	"stellarbill-backend/internal/migrations"
 	"strings"
 	"sync/atomic"
 	"syscall"
 	"testing"
 	"time"
-
-	"stellarbill-backend/internal/config"
-	"stellarbill-backend/internal/migrations"
 )
 
 func TestRunHTTPServer_ShutdownSignalBeforeAnyRequest(t *testing.T) {

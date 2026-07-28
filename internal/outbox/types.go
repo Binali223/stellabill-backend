@@ -10,21 +10,21 @@ import (
 
 // Event represents an outbox event
 type Event struct {
-	ID            uuid.UUID  `json:"id" db:"id"`
-	EventType     string     `json:"event_type" db:"event_type"`
-	EventData     json.RawMessage `json:"event_data" db:"event_data"`
-	AggregateID   *string    `json:"aggregate_id,omitempty" db:"aggregate_id"`
-	AggregateType *string    `json:"aggregate_type,omitempty" db:"aggregate_type"`
-	OccurredAt    time.Time  `json:"occurred_at" db:"occurred_at"`
-	Status        Status     `json:"status" db:"status"`
-	RetryCount    int        `json:"retry_count" db:"retry_count"`
-	MaxRetries    int        `json:"max_retries" db:"max_retries"`
-	NextRetryAt   *time.Time `json:"next_retry_at,omitempty" db:"next_retry_at"`
-	ErrorMessage  *string    `json:"error_message,omitempty" db:"error_message"`
-	CreatedAt     time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt     time.Time  `json:"updated_at" db:"updated_at"`
-	Version       int        `json:"version" db:"version"`
-	DeduplicationID *string  `json:"deduplication_id,omitempty" db:"deduplication_id"`
+	ID              uuid.UUID       `json:"id" db:"id"`
+	EventType       string          `json:"event_type" db:"event_type"`
+	EventData       json.RawMessage `json:"event_data" db:"event_data"`
+	AggregateID     *string         `json:"aggregate_id,omitempty" db:"aggregate_id"`
+	AggregateType   *string         `json:"aggregate_type,omitempty" db:"aggregate_type"`
+	OccurredAt      time.Time       `json:"occurred_at" db:"occurred_at"`
+	Status          Status          `json:"status" db:"status"`
+	RetryCount      int             `json:"retry_count" db:"retry_count"`
+	MaxRetries      int             `json:"max_retries" db:"max_retries"`
+	NextRetryAt     *time.Time      `json:"next_retry_at,omitempty" db:"next_retry_at"`
+	ErrorMessage    *string         `json:"error_message,omitempty" db:"error_message"`
+	CreatedAt       time.Time       `json:"created_at" db:"created_at"`
+	UpdatedAt       time.Time       `json:"updated_at" db:"updated_at"`
+	Version         int             `json:"version" db:"version"`
+	DeduplicationID *string         `json:"deduplication_id,omitempty" db:"deduplication_id"`
 }
 
 // Status represents the status of an outbox event

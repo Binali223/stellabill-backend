@@ -3,12 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"stellarbill-backend/internal/audit"
+	"stellarbill-backend/internal/outbox"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"stellarbill-backend/internal/audit"
-	"stellarbill-backend/internal/outbox"
 )
 
 // SubscriberKeysHandler manages subscriber JWK registration for outbox encryption.

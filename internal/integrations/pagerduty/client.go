@@ -37,11 +37,11 @@ type payload struct {
 }
 
 type details struct {
-	Summary   string                 `json:"summary"`
-	Source    string                 `json:"source"`
-	Severity  Severity               `json:"severity"`
-	Timestamp string                 `json:"timestamp"`
-	CustomDetails map[string]any     `json:"custom_details,omitempty"`
+	Summary       string         `json:"summary"`
+	Source        string         `json:"source"`
+	Severity      Severity       `json:"severity"`
+	Timestamp     string         `json:"timestamp"`
+	CustomDetails map[string]any `json:"custom_details,omitempty"`
 }
 
 // HTTPClient is the interface used for sending events, allowing test injection.

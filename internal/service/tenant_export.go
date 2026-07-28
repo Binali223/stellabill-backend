@@ -9,12 +9,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sync"
-	"time"
-
 	"stellarbill-backend/internal/audit"
 	"stellarbill-backend/internal/repository"
 	"stellarbill-backend/internal/storage/s3"
+	"sync"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -350,8 +349,8 @@ func (m *ExportJobManager) processJob(job *ExportJob) {
 				Resource: fmt.Sprintf("tenant:%s", job.TenantID),
 				Outcome:  "failure",
 				Metadata: map[string]interface{}{
-					"job_id":  job.ID,
-					"reason":  err.Error(),
+					"job_id": job.ID,
+					"reason": err.Error(),
 				},
 			})
 		}

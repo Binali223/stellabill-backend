@@ -24,12 +24,12 @@ func (m *mockPinger) PingContext(ctx context.Context) error {
 // mockDBTX implements DBTX for testing and counts calls.
 type mockDBTX struct {
 	*mockPinger
-	execCount        int
-	prepareCount     int
-	queryCount       int
-	queryRowCount    int
-	execNoCtxCount   int
-	queryNoCtxCount  int
+	execCount          int
+	prepareCount       int
+	queryCount         int
+	queryRowCount      int
+	execNoCtxCount     int
+	queryNoCtxCount    int
 	queryRowNoCtxCount int
 }
 
@@ -109,7 +109,7 @@ func TestReadRouter_ReplicaFailover(t *testing.T) {
 		// First call triggers health check and marks it down
 		selected := router.Reader(ctx)
 		assert.Equal(t, primary, selected)
-		
+
 		// Second call within healthCheckFreq uses cached "down" state
 		selected = router.Reader(ctx)
 		assert.Equal(t, primary, selected)
@@ -119,13 +119,13 @@ func TestReadRouter_ReplicaFailover(t *testing.T) {
 		ctx := context.Background()
 		// Force check to trip replica as down first
 		router.Reader(ctx)
-		
+
 		// Wait for recovery check window
 		time.Sleep(20 * time.Millisecond)
-		
+
 		// Make replica healthy
 		replica.pingErr = nil
-		
+
 		// Next call should re-check and route to replica
 		selected := router.Reader(ctx)
 		assert.Equal(t, replica, selected)

@@ -4,13 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"stellarbill-backend/internal/integrations/pagerduty"
+	"stellarbill-backend/internal/worker"
 	"testing"
 	"time"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
-
-	"stellarbill-backend/internal/integrations/pagerduty"
-	"stellarbill-backend/internal/worker"
 )
 
 // fakeAlertClient captures Trigger / Resolve calls.
@@ -291,8 +290,10 @@ func TestNewDeadLetterWatcher_NonNilDB(t *testing.T) {
 }
 
 // --- compile-time interface check ---
-var _ worker.AlertClient = (*fakeAlertClient)(nil)
-var _ worker.AlertClient = (*pagerduty.Client)(nil)
+var (
+	_ worker.AlertClient = (*fakeAlertClient)(nil)
+	_ worker.AlertClient = (*pagerduty.Client)(nil)
+)
 
 // Ensure pagerduty.Client satisfies the AlertClient interface.
 func init() {

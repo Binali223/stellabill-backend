@@ -313,7 +313,7 @@ func TestRequestSizeLimit_LargeRequest(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	router := gin.New()
-	router.Use(RequestSizeLimit(1024*1024))
+	router.Use(RequestSizeLimit(1024 * 1024))
 	router.POST("/test", func(c *gin.Context) {
 		body, _ := io.ReadAll(c.Request.Body)
 		c.JSON(http.StatusOK, gin.H{"received": len(body)})

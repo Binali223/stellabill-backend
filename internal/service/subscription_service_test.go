@@ -2,11 +2,10 @@ package service_test
 
 import (
 	"context"
-	"testing"
-	"time"
-
 	"stellarbill-backend/internal/repository"
 	"stellarbill-backend/internal/service"
+	"testing"
+	"time"
 )
 
 func TestGetDetail_HappyPath(t *testing.T) {

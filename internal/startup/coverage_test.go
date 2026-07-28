@@ -5,10 +5,10 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/config"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"stellarbill-backend/internal/config"
 )
 
 func TestCoverage_DiagnosticsHandler(t *testing.T) {

@@ -3,9 +3,9 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"stellarbill-backend/internal/service"
 
 	"github.com/gin-gonic/gin"
-	"stellarbill-backend/internal/service"
 )
 
 // SwapHandler handles token swap HTTP requests.
@@ -26,10 +26,10 @@ type swapExactInRequest struct {
 }
 
 type swapExactOutRequest struct {
-	TokenIn      string  `json:"token_in" binding:"required"`
-	TokenOut     string  `json:"token_out" binding:"required"`
-	AmountOut    float64 `json:"amount_out" binding:"required,gt=0"`
-	MaxAmountIn  float64 `json:"max_amount_in" binding:"required,gt=0"`
+	TokenIn     string  `json:"token_in" binding:"required"`
+	TokenOut    string  `json:"token_out" binding:"required"`
+	AmountOut   float64 `json:"amount_out" binding:"required,gt=0"`
+	MaxAmountIn float64 `json:"max_amount_in" binding:"required,gt=0"`
 }
 
 // SwapExactTokensForTokens godoc

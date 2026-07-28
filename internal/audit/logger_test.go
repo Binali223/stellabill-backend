@@ -24,7 +24,6 @@ func TestLoggerRedactsSensitiveMetadata(t *testing.T) {
 			"Authorization": "Bearer abc",
 		},
 	})
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -73,7 +72,6 @@ func TestLoggerChainsHashes(t *testing.T) {
 		t.Fatalf("hash chain broken: prev=%s current=%s", second.PrevHash, first.Hash)
 	}
 }
-
 
 func TestRedactsSensitiveLookingValues(t *testing.T) {
 	sink := &MemorySink{}

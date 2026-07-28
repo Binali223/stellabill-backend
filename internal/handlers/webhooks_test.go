@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/outbox"
 	"testing"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"stellarbill-backend/internal/outbox"
 )
 
 type MockOutboxRepo struct {
@@ -25,13 +25,17 @@ func (m *MockOutboxRepo) Store(event *outbox.Event) error {
 }
 
 func (m *MockOutboxRepo) GetPendingEvents(limit int) ([]*outbox.Event, error) { return nil, nil }
-func (m *MockOutboxRepo) GetByID(id uuid.UUID) (*outbox.Event, error) { return nil, nil }
-func (m *MockOutboxRepo) UpdateStatus(id uuid.UUID, status outbox.Status, errorMessage *string) error { return nil }
+func (m *MockOutboxRepo) GetByID(id uuid.UUID) (*outbox.Event, error)         { return nil, nil }
+func (m *MockOutboxRepo) UpdateStatus(id uuid.UUID, status outbox.Status, errorMessage *string) error {
+	return nil
+}
 func (m *MockOutboxRepo) MarkAsProcessing(id uuid.UUID) error { return nil }
-func (m *MockOutboxRepo) IncrementRetryCount(id uuid.UUID, nextRetryAt time.Time, errorMessage *string) error { return nil }
-func (m *MockOutboxRepo) DeleteCompletedEvents(olderThan time.Time) (int64, error) { return 0, nil }
+func (m *MockOutboxRepo) IncrementRetryCount(id uuid.UUID, nextRetryAt time.Time, errorMessage *string) error {
+	return nil
+}
+func (m *MockOutboxRepo) DeleteCompletedEvents(olderThan time.Time) (int64, error)  { return 0, nil }
 func (m *MockOutboxRepo) ListDeadLetteredEvents(limit int) ([]*outbox.Event, error) { return nil, nil }
-func (m *MockOutboxRepo) RequeueEvent(id uuid.UUID) error { return nil }
+func (m *MockOutboxRepo) RequeueEvent(id uuid.UUID) error                           { return nil }
 
 func TestNewWebhookHandler(t *testing.T) {
 	mockRepo := new(MockOutboxRepo)

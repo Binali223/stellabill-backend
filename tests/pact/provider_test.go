@@ -30,12 +30,12 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"stellarbill-backend/internal/handlers"
+	"stellarbill-backend/internal/middleware"
 	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"stellarbill-backend/internal/handlers"
-	"stellarbill-backend/internal/middleware"
 )
 
 const testWebhookSecret = "test-webhook-secret-for-pact"
@@ -67,16 +67,16 @@ type PactInteraction struct {
 		Body    interface{}       `json:"body"`
 	} `json:"request"`
 	Response struct {
-		Status int               `json:"status"`
+		Status  int               `json:"status"`
 		Headers map[string]string `json:"headers"`
 		Body    interface{}       `json:"body"`
 	} `json:"response"`
 }
 
 type PactFile struct {
-	Consumer     struct{ Name string }  `json:"consumer"`
-	Provider     struct{ Name string }  `json:"provider"`
-	Interactions []PactInteraction      `json:"interactions"`
+	Consumer     struct{ Name string } `json:"consumer"`
+	Provider     struct{ Name string } `json:"provider"`
+	Interactions []PactInteraction     `json:"interactions"`
 }
 
 func loadFixtures(t *testing.T) []PactInteraction {

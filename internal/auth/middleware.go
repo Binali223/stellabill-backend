@@ -7,8 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const RoleContextKey = "role"
-const RolesContextKey = "roles"
+const (
+	RoleContextKey  = "role"
+	RolesContextKey = "roles"
+)
 
 // ExtractRole returns the first available role from the request context
 func ExtractRole(c *gin.Context) Role {

@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/repository"
+	"stellarbill-backend/internal/service"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -14,9 +16,6 @@ import (
 	"go.opentelemetry.io/otel"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
-
-	"stellarbill-backend/internal/repository"
-	"stellarbill-backend/internal/service"
 )
 
 // setupSpanRecorder installs an in-memory span recorder as the global tracer provider.

@@ -168,7 +168,7 @@ func (m *MockStatementRepo) ListByCustomerID(_ context.Context, customerID strin
 	if len(out) > limit {
 		out = out[:limit]
 	}
-		return out, totalCount, nil
+	return out, totalCount, nil
 }
 
 func (m *MockStatementRepo) Create(_ context.Context, stmt *StatementRow) error {

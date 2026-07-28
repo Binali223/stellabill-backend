@@ -4,9 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"time"
-
 	"stellarbill-backend/internal/config"
+	"time"
 )
 
 const findPlanByIDQuery = `

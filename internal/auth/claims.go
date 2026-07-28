@@ -6,12 +6,12 @@ import (
 
 // Claims represents the JWT claims structure
 type Claims struct {
-	UserID     string   `json:"user_id"`
-	Email      string   `json:"email"`
-	Role       Role     `json:"role"`
-	Roles      []Role   `json:"roles,omitempty"`
-	MerchantID string   `json:"merchant_id,omitempty"`
-	TenantID   string   `json:"tenant_id,omitempty"`
+	UserID     string `json:"user_id"`
+	Email      string `json:"email"`
+	Role       Role   `json:"role"`
+	Roles      []Role `json:"roles,omitempty"`
+	MerchantID string `json:"merchant_id,omitempty"`
+	TenantID   string `json:"tenant_id,omitempty"`
 	jwt.RegisteredClaims
 }
 

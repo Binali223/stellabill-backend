@@ -5,12 +5,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"stellarbill-backend/internal/config"
+	"stellarbill-backend/internal/routes"
 	"time"
 
 	"github.com/gin-gonic/gin"
-
-	"stellarbill-backend/internal/config"
-	"stellarbill-backend/internal/routes"
 )
 
 var listenAndServe = func(srv *http.Server) error {

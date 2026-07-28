@@ -38,12 +38,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/repository"
+	"stellarbill-backend/internal/service"
 	"testing"
 	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
-	"stellarbill-backend/internal/repository"
-	"stellarbill-backend/internal/service"
 )
 
 // ── Stub service ─────────────────────────────────────────────────────────────
@@ -150,7 +150,7 @@ func FuzzListStatements(f *testing.F) {
 		// Boundary limit values
 		{"cust-1", "", "", "", "", "", "0", "desc"},
 		{"cust-1", "", "", "", "", "", "-1", "desc"},
-		{"cust-1", "", "", "", "", "", "201", "desc"},        // above max → clamp to 200
+		{"cust-1", "", "", "", "", "", "201", "desc"}, // above max → clamp to 200
 		{"cust-1", "", "", "", "", "", "999999", "desc"},
 		{"cust-1", "", "", "", "", "", "2147483647", "desc"}, // max int32
 		{"cust-1", "", "", "", "", "", "2147483648", "desc"}, // overflow
@@ -165,7 +165,7 @@ func FuzzListStatements(f *testing.F) {
 		{"cust-1", "", "", "", "not-a-date", "", "20", "desc"},
 		{"cust-1", "", "", "", "2024-13-01T00:00:00Z", "", "20", "desc"}, // month 13
 		{"cust-1", "", "", "", "", "2024-00-01T00:00:00Z", "20", "desc"}, // month 0
-		{"cust-1", "", "", "", "2024-01-01", "", "20", "desc"},            // date-only (no time)
+		{"cust-1", "", "", "", "2024-01-01", "", "20", "desc"},           // date-only (no time)
 		{"cust-1", "", "", "", "2024-01-01T00:00:00", "", "20", "desc"},  // missing Z
 
 		// SQL injection probes

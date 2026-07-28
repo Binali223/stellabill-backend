@@ -3,27 +3,26 @@ package worker
 import (
 	"context"
 	"fmt"
-	"sync"
-	"time"
-
 	"stellarbill-backend/internal/middleware"
 	"stellarbill-backend/internal/security"
 	"stellarbill-backend/internal/timeutil"
+	"sync"
+	"time"
 )
 
 // Scheduler provides utilities for creating and scheduling billing jobs with
 // priority-aware weighted round-robin lane selection.
 type Scheduler struct {
-	store       JobStore
-	counter     int64
-	mu          sync.Mutex
+	store   JobStore
+	counter int64
+	mu      sync.Mutex
 
-	weights         map[Priority]int
-	totalWeight     int
+	weights     map[Priority]int
+	totalWeight int
 
 	// starvationCount tracks consecutive high/normal picks to guard the low lane.
-	starvationCount  int
-	starvationLimit  int
+	starvationCount int
+	starvationLimit int
 }
 
 // NewScheduler creates a new job scheduler with the default lane weights.

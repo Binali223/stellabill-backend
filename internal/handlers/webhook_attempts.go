@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"net/http"
+	"stellarbill-backend/internal/outbox"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"stellarbill-backend/internal/outbox"
 )
 
 // NewWebhookAttemptsHandler returns GET /api/v1/webhooks/:id/attempts.

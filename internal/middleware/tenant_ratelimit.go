@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"stellarbill-backend/internal/timeutil"
 	"sync"
 	"time"
-
-	"stellarbill-backend/internal/timeutil"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/time/rate"
@@ -22,15 +21,15 @@ const (
 
 // tenantLimiter holds a rate limiter and its last access time for a specific tenant
 type tenantLimiter struct {
-	limiter     *rate.Limiter
-	lastAccess  time.Time
-	mu          sync.Mutex
+	limiter    *rate.Limiter
+	lastAccess time.Time
+	mu         sync.Mutex
 }
 
 // shard holds a subset of tenant limiters
 type shard struct {
 	limiters map[string]*tenantLimiter
-	mu      sync.RWMutex
+	mu       sync.RWMutex
 }
 
 // TenantRateLimiter manages per-tenant rate limiting with sharded storage and TTL eviction
@@ -80,7 +79,7 @@ func (trl *TenantRateLimiter) getShard(tenantID string) *shard {
 // getLimiter returns or creates a limiter for the given tenant ID
 func (trl *TenantRateLimiter) getLimiter(tenantID string) *tenantLimiter {
 	shard := trl.getShard(tenantID)
-	
+
 	shard.mu.RLock()
 	limiter, exists := shard.limiters[tenantID]
 	if exists {
@@ -105,8 +104,8 @@ func (trl *TenantRateLimiter) getLimiter(tenantID string) *tenantLimiter {
 
 	// Create new limiter
 	limiter = &tenantLimiter{
-		limiter:     rate.NewLimiter(rate.Limit(trl.rps), trl.burst),
-		lastAccess:  timeutil.NowUTC(),
+		limiter:    rate.NewLimiter(rate.Limit(trl.rps), trl.burst),
+		lastAccess: timeutil.NowUTC(),
 	}
 	shard.limiters[tenantID] = limiter
 
@@ -159,9 +158,9 @@ func (trl *TenantRateLimiter) Allow(tenantID string) bool {
 
 // TenantRateLimitConfig holds configuration for per-tenant rate limiting
 type TenantRateLimitConfig struct {
-	Enabled      bool
-	RPS          int
-	Burst        int
+	Enabled          bool
+	RPS              int
+	Burst            int
 	LogRateLimitHits bool
 }
 

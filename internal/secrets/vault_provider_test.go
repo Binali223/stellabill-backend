@@ -12,7 +12,6 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
-	"errors"
 )
 
 func TestVaultProvider_GetSecret(t *testing.T) {
@@ -31,7 +30,7 @@ func TestVaultProvider_GetSecret(t *testing.T) {
 		defer server.Close()
 
 		p := NewVaultProvider(server.URL, "test-token", "secret/data")
-		
+
 		// First call - fetch from server
 		val, err := p.GetSecret(context.Background(), "TEST_KEY")
 		if err != nil {
@@ -124,7 +123,7 @@ func TestVaultProvider_GetSecret(t *testing.T) {
 
 		// Wait until nearing expiry (but not yet expired)
 		time.Sleep(85 * time.Millisecond)
-		
+
 		// This call should trigger background refresh
 		val, _ = p.GetSecret(context.Background(), "KEY")
 		if val != "val-1" {

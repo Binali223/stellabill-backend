@@ -3,19 +3,20 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"stellarbill-backend/internal/repository"
+	"stellarbill-backend/internal/service"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
-
-	"stellarbill-backend/internal/repository"
-	"stellarbill-backend/internal/service"
 )
 
 // ---------------- CONSTANTS ----------------
 
-const defaultLimit = 20
-const maxLimit = 200
+const (
+	defaultLimit = 20
+	maxLimit     = 200
+)
 
 // ---------------- LIST HANDLER ----------------
 

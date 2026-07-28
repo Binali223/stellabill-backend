@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/repository"
+	"stellarbill-backend/internal/service"
 	"strings"
 	"testing"
 
@@ -15,8 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	gqlpkg "stellarbill-backend/internal/graphql"
-	"stellarbill-backend/internal/repository"
-	"stellarbill-backend/internal/service"
 )
 
 func init() {
@@ -342,6 +342,7 @@ type errPlanRepo struct{}
 func (e errPlanRepo) FindByID(_ context.Context, _ string) (*repository.PlanRow, error) {
 	return nil, fmt.Errorf("db error")
 }
+
 func (e errPlanRepo) List(_ context.Context) ([]*repository.PlanRow, error) {
 	return nil, fmt.Errorf("db error")
 }
@@ -364,12 +365,15 @@ type errStmtRepo struct{}
 func (e errStmtRepo) FindByID(_ context.Context, _ string) (*repository.StatementRow, error) {
 	return nil, fmt.Errorf("db error")
 }
+
 func (e errStmtRepo) ListByCustomerID(_ context.Context, _ string, _ repository.StatementQuery) ([]*repository.StatementRow, int, error) {
 	return nil, 0, fmt.Errorf("db error")
 }
+
 func (e errStmtRepo) UpdateArchivedData(_ context.Context, _ string, _ *repository.StatementRow) error {
 	return nil
 }
+
 func (e errStmtRepo) Create(_ context.Context, _ *repository.StatementRow) error {
 	return nil
 }

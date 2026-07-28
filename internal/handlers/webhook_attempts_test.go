@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/outbox"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"stellarbill-backend/internal/outbox"
 )
 
 func setupAttemptsRouter(repo outbox.AttemptRepository) *gin.Engine {

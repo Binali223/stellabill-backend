@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/service"
 	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-
-	"stellarbill-backend/internal/service"
 )
 
 // mockErrorService returns different errors for testing
@@ -336,7 +335,7 @@ func TestErrorEnvelope_PIIRedaction(t *testing.T) {
 			"amount":      1234.56,
 			"safe_field":  "ok",
 		}
-		RespondWithErrorDetails(c, http.StatusBadRequest, ErrorCodeBadRequest, 
+		RespondWithErrorDetails(c, http.StatusBadRequest, ErrorCodeBadRequest,
 			"Failed processing customer_cust_sensitive123 with amount 1234.56", details)
 	})
 

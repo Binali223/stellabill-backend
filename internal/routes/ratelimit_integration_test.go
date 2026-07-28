@@ -4,17 +4,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"stellarbill-backend/internal/auth"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"stellarbill-backend/internal/auth"
-
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
-	"stellarbill-backend/internal/auth"
 )
 
 // helper to reset env between tests
@@ -31,7 +29,6 @@ func resetRateLimitEnv() {
 	os.Unsetenv("RATE_LIMIT_MODE")
 	os.Unsetenv("RATE_LIMIT_WHITELIST")
 }
-
 
 func newAuthRequest(method, path string) *http.Request {
 	req := httptest.NewRequest(method, path, nil)

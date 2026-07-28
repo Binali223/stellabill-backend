@@ -4,10 +4,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"stellarbill-backend/internal/db"
 	"time"
 
 	"github.com/google/uuid"
-	"stellarbill-backend/internal/db"
 )
 
 // SubscriberKeyStatus represents the lifecycle state of a subscriber key.
@@ -25,7 +25,7 @@ type SubscriberKey struct {
 	SubscriberID string              `json:"subscriber_id"`
 	KeyID        string              `json:"key_id"`
 	JWK          json.RawMessage     `json:"jwk"`
-	Status       SubscriberKeyStatus   `json:"status"`
+	Status       SubscriberKeyStatus `json:"status"`
 	ExpiresAt    *time.Time          `json:"expires_at,omitempty"`
 	CreatedAt    time.Time           `json:"created_at"`
 	UpdatedAt    time.Time           `json:"updated_at"`
@@ -149,7 +149,8 @@ func (r *postgresSubscriberKeyRepository) UpdateStatus(id uuid.UUID, status Subs
 
 func (r *postgresSubscriberKeyRepository) scanKey(scanner interface {
 	Scan(dest ...interface{}) error
-}) (*SubscriberKey, error) {
+},
+) (*SubscriberKey, error) {
 	var key SubscriberKey
 	var expiresAt sql.NullTime
 	err := scanner.Scan(

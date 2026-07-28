@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/auth"
 
 	"github.com/gin-gonic/gin"
-	"stellarbill-backend/internal/auth"
 )
 
 // TestRequest holds test request context

@@ -1,11 +1,10 @@
 package fraud
 
 import (
+	"stellarbill-backend/internal/audit"
 	"strings"
 	"testing"
 	"time"
-
-	"stellarbill-backend/internal/audit"
 )
 
 func TestAdapt_NilLogger(t *testing.T) {

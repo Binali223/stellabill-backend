@@ -3,11 +3,10 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"stellarbill-backend/internal/cache"
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"stellarbill-backend/internal/cache"
 )
 
 // cacheEnvelope wraps the actual data with a stored timestamp so the decorator

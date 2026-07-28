@@ -11,7 +11,7 @@ import (
 
 func TestStandaloneListSubscriptions(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	
+
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	ListSubscriptions(c)

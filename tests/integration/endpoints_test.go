@@ -4,14 +4,14 @@ package integration
 
 import (
 	"net/http"
-	"testing"
-
-	"github.com/gin-gonic/gin"
+	"os"
 	"stellarbill-backend/internal/auth"
 	"stellarbill-backend/internal/config"
 	"stellarbill-backend/internal/routes"
 	"stellarbill-backend/internal/testutil"
-	"os"
+	"testing"
+
+	"github.com/gin-gonic/gin"
 )
 
 func setupRouter() *gin.Engine {
@@ -28,7 +28,7 @@ func setupRouter() *gin.Engine {
 	// Provide mocks for the handler if needed, though middleware should stop most failures
 	// Note: Register normally initializes its own mocks, but we can override if we want.
 	// For these tests, we just let Register do its thing.
-	
+
 	routes.Register(router)
 	return router
 }
@@ -135,11 +135,11 @@ func TestListPlansAuthenticationAndAuthorization(t *testing.T) {
 			description:     "merchant can access plans",
 		},
 		{
-			name:           "valid customer token",
-			token:          createCustomerToken(tg),
-			expectedStatus: http.StatusForbidden,
+			name:            "valid customer token",
+			token:           createCustomerToken(tg),
+			expectedStatus:  http.StatusForbidden,
 			shouldHaveError: true,
-			description:    "customer cannot access plans",
+			description:     "customer cannot access plans",
 		},
 		{
 			name:            "token without user_id",

@@ -32,9 +32,9 @@ func (r *memRepo) GetPendingEvents(limit int) ([]*Event, error) {
 	return r.GetPendingEventsForPublisher("", limit)
 }
 
-func (r *memRepo) GetByID(id uuid.UUID) (*Event, error)                                { return nil, nil }
+func (r *memRepo) GetByID(id uuid.UUID) (*Event, error)                                 { return nil, nil }
 func (r *memRepo) UpdateStatus(id uuid.UUID, status Status, errorMessage *string) error { return nil }
-func (r *memRepo) MarkAsProcessing(id uuid.UUID) error                                 { return nil }
+func (r *memRepo) MarkAsProcessing(id uuid.UUID) error                                  { return nil }
 func (r *memRepo) IncrementRetryCount(id uuid.UUID, nextRetryAt time.Time, errorMessage *string) error {
 	return nil
 }

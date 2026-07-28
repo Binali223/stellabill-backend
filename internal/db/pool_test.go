@@ -2,10 +2,9 @@ package db
 
 import (
 	"context"
+	"stellarbill-backend/internal/config"
 	"testing"
 	"time"
-
-	"stellarbill-backend/internal/config"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

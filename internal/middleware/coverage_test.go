@@ -3,10 +3,10 @@ package middleware
 import (
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/config"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"stellarbill-backend/internal/config"
 )
 
 func TestCoverage_AuthMiddleware(t *testing.T) {

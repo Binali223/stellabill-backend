@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/featureflags"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"stellarbill-backend/internal/featureflags"
 )
 
 func TestNewFeatureFlagsHandler(t *testing.T) {

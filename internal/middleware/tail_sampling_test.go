@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/middleware"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -15,7 +16,6 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
-	"stellarbill-backend/internal/middleware"
 )
 
 func TestTailSamplingSignalsAnnotatesServerSpan(t *testing.T) {

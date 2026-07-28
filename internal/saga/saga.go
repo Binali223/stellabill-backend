@@ -9,21 +9,21 @@ import (
 type StepStatus string
 
 const (
-	StepPending           StepStatus = "pending"
-	StepRunning           StepStatus = "running"
-	StepCompleted         StepStatus = "completed"
-	StepFailed            StepStatus = "failed"
-	StepCompensating      StepStatus = "compensating"
-	StepCompensated       StepStatus = "compensated"
+	StepPending            StepStatus = "pending"
+	StepRunning            StepStatus = "running"
+	StepCompleted          StepStatus = "completed"
+	StepFailed             StepStatus = "failed"
+	StepCompensating       StepStatus = "compensating"
+	StepCompensated        StepStatus = "compensated"
 	StepCompensationFailed StepStatus = "compensation_failed"
 )
 
 type SagaStatus string
 
 const (
-	SagaRunning     SagaStatus = "running"
-	SagaCompleted   SagaStatus = "completed"
-	SagaFailed      SagaStatus = "failed"
+	SagaRunning      SagaStatus = "running"
+	SagaCompleted    SagaStatus = "completed"
+	SagaFailed       SagaStatus = "failed"
 	SagaCompensating SagaStatus = "compensating"
 	SagaCompensated  SagaStatus = "compensated"
 )

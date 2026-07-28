@@ -32,7 +32,7 @@ func TestDefaultHTTPClient_Post_Success(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
-		
+
 		traceparent := r.Header.Get("Traceparent")
 		assert.NotEmpty(t, traceparent, "expected traceparent header to be propagated")
 
@@ -119,7 +119,7 @@ func TestDefaultHTTPClient_BadCAFile(t *testing.T) {
 
 func TestDefaultHTTPClient_Post_MaxBodySize(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		largeData := make([]byte, 2*1024*1024) 
+		largeData := make([]byte, 2*1024*1024)
 		w.WriteHeader(http.StatusOK)
 		w.Write(largeData)
 	}))

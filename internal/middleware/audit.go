@@ -15,12 +15,12 @@ func AuditMiddleware(log *audit.Logger) func(http.Handler) http.Handler {
 
 			// 1. Extract identity (Assuming you've already authenticated the user)
 			// If not authenticated yet, it will fallback to "system/anonymous"
-			actor := extractUser(r) 
+			actor := extractUser(r)
 			ctx := audit.WithActor(r.Context(), actor)
 
 			// 2. Wrap the response writer to capture the status code
 			wrapped := &responseWriter{ResponseWriter: w, status: http.StatusOK}
-			
+
 			// 3. Process the request
 			next.ServeHTTP(wrapped, r.WithContext(ctx))
 
@@ -68,5 +68,5 @@ func (rw *responseWriter) WriteHeader(code int) {
 func extractUser(r *http.Request) string {
 	// Logic to pull user ID from JWT or Session
 	// This is a placeholder for your auth logic
-	return "user_id_from_context" 
+	return "user_id_from_context"
 }

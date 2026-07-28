@@ -97,7 +97,7 @@ func TestPaginateSlice_ContinuityAndDuplicates(t *testing.T) {
 	if !page1.HasMore {
 		t.Error("expected hasMore true")
 	}
-	
+
 	next1, _ := Decode(page1.NextCursor)
 	if next1.ID != "b" || next1.SortValue != "10" {
 		t.Errorf("expected next1 to be b:10, got %v", next1)
@@ -111,7 +111,7 @@ func TestPaginateSlice_ContinuityAndDuplicates(t *testing.T) {
 	if !page2.HasMore {
 		t.Error("expected hasMore true")
 	}
-	
+
 	next2, _ := Decode(page2.NextCursor)
 	if next2.ID != "d" || next2.SortValue != "30" {
 		t.Errorf("expected next2 to be d:30, got %v", next2)

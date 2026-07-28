@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"net/http"
+	"stellarbill-backend/internal/pagination"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"stellarbill-backend/internal/pagination"
 )
 
 type Plan struct {

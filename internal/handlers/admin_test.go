@@ -6,13 +6,13 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/audit"
+	"stellarbill-backend/internal/cache"
+	"stellarbill-backend/internal/repository"
 	"sync"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"stellarbill-backend/internal/audit"
-	"stellarbill-backend/internal/cache"
-	"stellarbill-backend/internal/repository"
 )
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -190,7 +190,6 @@ func TestAdminDefaultToken(t *testing.T) {
 		t.Fatalf("unexpected audit entry: action=%q outcome=%q", entry.Action, entry.Outcome)
 	}
 }
-
 
 // ── new tests: real cache invalidation behaviour ─────────────────────────────
 
@@ -501,4 +500,3 @@ func TestAdminPurge_WithRealRepos(t *testing.T) {
 		t.Fatalf("post-purge FindByID: %v %v", p1, err)
 	}
 }
-

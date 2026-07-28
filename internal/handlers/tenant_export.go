@@ -4,11 +4,10 @@ import (
 	"context"
 	"errors"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
-
 	"stellarbill-backend/internal/audit"
 	"stellarbill-backend/internal/service"
+
+	"github.com/gin-gonic/gin"
 )
 
 // ExportJobManager defines the interface for creating and querying export jobs.
@@ -26,10 +25,10 @@ type createExportResponse struct {
 }
 
 type exportStatusResponse struct {
-	JobID  string                   `json:"job_id"`
-	Status service.ExportJobStatus  `json:"status"`
+	JobID  string                      `json:"job_id"`
+	Status service.ExportJobStatus     `json:"status"`
 	Result *service.TenantExportResult `json:"result,omitempty"`
-	Error  string                   `json:"error,omitempty"`
+	Error  string                      `json:"error,omitempty"`
 }
 
 // NewTenantExportHandler returns a gin.HandlerFunc for POST /api/v1/tenants/me/export.

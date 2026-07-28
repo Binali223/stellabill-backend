@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/middleware"
 	"sync"
 	"testing"
 	"time"
@@ -13,8 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"stellarbill-backend/internal/middleware"
 )
 
 func TestIdempotencyMiddleware_BypassNonMutating(t *testing.T) {

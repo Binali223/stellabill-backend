@@ -5,22 +5,22 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/logger"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"stellarbill-backend/internal/logger"
 )
 
 func TestLoggerNeverLeaksSecrets(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	testCases := []struct {
-		name           string
-		method         string
-		path           string
-		headers        map[string]string
-		body           string
-		bannedSubstrs  []string
+		name          string
+		method        string
+		path          string
+		headers       map[string]string
+		body          string
+		bannedSubstrs []string
 	}{
 		{
 			name:   "Authorization header redacted",
@@ -41,11 +41,11 @@ func TestLoggerNeverLeaksSecrets(t *testing.T) {
 			bannedSubstrs: []string{"admin-secret-456"},
 		},
 		{
-			name:           "JWT in query string redacted",
-			method:         "GET",
-			path:           "/api/health?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.signature",
-			headers:        map[string]string{},
-			bannedSubstrs:  []string{"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"},
+			name:          "JWT in query string redacted",
+			method:        "GET",
+			path:          "/api/health?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.signature",
+			headers:       map[string]string{},
+			bannedSubstrs: []string{"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"},
 		},
 		{
 			name:   "Password in JSON body redacted",
@@ -54,8 +54,8 @@ func TestLoggerNeverLeaksSecrets(t *testing.T) {
 			headers: map[string]string{
 				"Content-Type": "application/json",
 			},
-			body:           `{"username": "test", "password": "mysecretpass"}`,
-			bannedSubstrs:  []string{"mysecretpass"},
+			body:          `{"username": "test", "password": "mysecretpass"}`,
+			bannedSubstrs: []string{"mysecretpass"},
 		},
 	}
 

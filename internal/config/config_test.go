@@ -4,10 +4,9 @@ import (
 	"context"
 	"errors"
 	"os"
+	"stellarbill-backend/internal/secrets"
 	"strings"
 	"testing"
-
-	"stellarbill-backend/internal/secrets"
 )
 
 const (
@@ -136,7 +135,6 @@ func TestLoadFailsOnWeakSecrets(t *testing.T) {
 	})
 }
 
-
 func TestLoadRejectsInvalidRateLimitCombination(t *testing.T) {
 	withEnvVars(t, map[string]string{
 		"ENV":              "development",
@@ -169,7 +167,6 @@ func TestLoadRejectsTimeoutOutOfRange(t *testing.T) {
 		}
 	})
 }
-
 
 func TestLoadProviderErrorsAreClassified(t *testing.T) {
 	withEnvVars(t, map[string]string{"ENV": "development"}, func() {

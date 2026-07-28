@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"stellarbill-backend/internal/timeutil"
 	"sync"
 	"time"
-
-	"stellarbill-backend/internal/timeutil"
 
 	"github.com/gin-gonic/gin"
 )
@@ -40,13 +39,13 @@ type RouteSpecificConfig struct {
 
 // RateLimiterConfig holds configuration for rate limiting
 type RateLimiterConfig struct {
-	Mode               RateLimitMode          // Rate limiting mode
-	RequestsPerSec     int64                  // Base requests per second
-	BurstSize          int64                  // Maximum burst size
-	WhitelistPaths     []string               // Paths to exclude from rate limiting
-	Enabled            bool                   // Enable/disable rate limiting
-	RouteConfigs       map[string]RouteSpecificConfig // Per-route overrides
-	LogRateLimitHits   bool                   // Log when rate limits are hit
+	Mode             RateLimitMode                  // Rate limiting mode
+	RequestsPerSec   int64                          // Base requests per second
+	BurstSize        int64                          // Maximum burst size
+	WhitelistPaths   []string                       // Paths to exclude from rate limiting
+	Enabled          bool                           // Enable/disable rate limiting
+	RouteConfigs     map[string]RouteSpecificConfig // Per-route overrides
+	LogRateLimitHits bool                           // Log when rate limits are hit
 }
 
 // APIRateLimiter manages multiple token buckets for rate limiting

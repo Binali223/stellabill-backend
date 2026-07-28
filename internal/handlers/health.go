@@ -25,8 +25,8 @@ const (
 
 // Dependency check configuration
 const (
-	MaxRetries       = 2
-	InitialBackoff   = 100 * time.Millisecond
+	MaxRetries         = 2
+	InitialBackoff     = 100 * time.Millisecond
 	MaxDatabaseTimeout = 3 * time.Second
 )
 
@@ -57,9 +57,9 @@ type HealthResponse struct {
 
 // DependencyHealth holds the health status of a single dependency
 type DependencyHealth struct {
-	Status  string        `json:"status"`
-	Message string        `json:"message,omitempty"`
-	Latency string        `json:"latency,omitempty"`
+	Status  string                 `json:"status"`
+	Message string                 `json:"message,omitempty"`
+	Latency string                 `json:"latency,omitempty"`
 	Details map[string]interface{} `json:"details,omitempty"`
 }
 

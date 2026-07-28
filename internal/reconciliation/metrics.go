@@ -5,8 +5,8 @@ import (
 )
 
 var (
-	ReconciliationLag *prometheus.GaugeVec
-	ReconciliationTotal *prometheus.CounterVec
+	ReconciliationLag          *prometheus.GaugeVec
+	ReconciliationTotal        *prometheus.CounterVec
 	ReconciliationReportsTotal *prometheus.CounterVec
 )
 

@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"stellarbill-backend/internal/cache"
 	"sync"
 	"testing"
 	"time"
-
-	"stellarbill-backend/internal/cache"
 )
 
 func TestCachedPlanRepo_HitMissAndTTL(t *testing.T) {
@@ -67,6 +66,7 @@ type faultyCache struct{}
 func (f *faultyCache) Get(_ context.Context, _ string) ([]byte, error) {
 	return nil, errors.New("cache down")
 }
+
 func (f *faultyCache) Set(_ context.Context, _ string, _ []byte, _ time.Duration) error {
 	return errors.New("cache down")
 }
@@ -277,6 +277,7 @@ type erroringPlanRepo struct{}
 func (erroringPlanRepo) FindByID(ctx context.Context, id string) (*PlanRow, error) {
 	return nil, errors.New("backend down")
 }
+
 func (erroringPlanRepo) List(ctx context.Context) ([]*PlanRow, error) {
 	return nil, errors.New("backend list down")
 }
