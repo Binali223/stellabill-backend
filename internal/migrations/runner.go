@@ -8,19 +8,16 @@ import (
 	"time"
 )
 
-// AppliedMigration records a single migration that has been applied.
 type AppliedMigration struct {
 	Version   int64
 	Name      string
 	AppliedAt time.Time
 }
 
-// Runner manages schema migration execution against a SQL database.
 type Runner struct {
 	DB *sql.DB
 }
 
-// Validate checks that the Runner is properly configured.
 func (r Runner) Validate() error {
 	if r.DB == nil {
 		return errors.New("DB is required")
@@ -28,7 +25,6 @@ func (r Runner) Validate() error {
 	return nil
 }
 
-// EnsureSchemaMigrations creates the schema_migrations table if it does not exist.
 func (r Runner) EnsureSchemaMigrations(ctx context.Context, tx *sql.Tx) error {
 	_, err := tx.ExecContext(ctx, `
 CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -44,7 +40,6 @@ func (r Runner) lock(ctx context.Context, tx *sql.Tx) error {
 	return err
 }
 
-// Applied returns all migrations that have been applied to the database.
 func (r Runner) Applied(ctx context.Context) ([]AppliedMigration, error) {
 	if err := r.Validate(); err != nil {
 		return nil, err
@@ -92,7 +87,6 @@ func (r Runner) Applied(ctx context.Context) ([]AppliedMigration, error) {
 	return out, nil
 }
 
-// Up applies any pending migrations that have not yet been applied.
 func (r Runner) Up(ctx context.Context, migs []Migration) ([]Migration, error) {
 	if err := r.Validate(); err != nil {
 		return nil, err
@@ -145,7 +139,6 @@ func (r Runner) Up(ctx context.Context, migs []Migration) ([]Migration, error) {
 	return appliedNow, nil
 }
 
-// Down reverts the most recently applied migration from the provided list.
 func (r Runner) Down(ctx context.Context, migs []Migration) (*Migration, error) {
 	if err := r.Validate(); err != nil {
 		return nil, err

@@ -3,11 +3,10 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"stellarbill-backend/internal/cache"
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"stellarbill-backend/internal/cache"
 )
 
 // cacheEnvelope wraps the actual data with a stored timestamp so the decorator
@@ -174,26 +173,8 @@ func (cpr *CachedPlanRepo) List(ctx context.Context) ([]*PlanRow, error) {
 	return out, nil
 }
 
-// Update delegates to backend and invalidates cache.
-func (cpr *CachedPlanRepo) Update(ctx context.Context, plan *PlanRow, expectedVersion int64) error {
-	if err := cpr.backend.Update(ctx, plan, expectedVersion); err != nil {
-		return err
-	}
-	_ = cpr.invalidate(ctx, plan.ID)
-	return nil
-}
-
-// Delete delegates to backend and invalidates cache.
-func (cpr *CachedPlanRepo) Delete(ctx context.Context, id string, expectedVersion int64) error {
-	if err := cpr.backend.Delete(ctx, id, expectedVersion); err != nil {
-		return err
-	}
-	_ = cpr.invalidate(ctx, id)
-	return nil
-}
-
-// invalidate invalidates a cached plan entry and records the invalidation time.
-func (cpr *CachedPlanRepo) invalidate(ctx context.Context, id string) error {
+// Delete invalidates a cached plan entry and records the invalidation time.
+func (cpr *CachedPlanRepo) Delete(ctx context.Context, id string) error {
 	if cpr.cache == nil {
 		return nil
 	}

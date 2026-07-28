@@ -1,11 +1,10 @@
 package middleware
 
 import (
-	"time"
-
 	"stellarbill-backend/internal/correlation"
 	"stellarbill-backend/internal/logger"
 	"stellarbill-backend/internal/security"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
@@ -14,7 +13,6 @@ import (
 
 func RequestLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
-
 		start := time.Now()
 
 		requestID := correlation.NewID()

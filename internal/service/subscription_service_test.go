@@ -2,12 +2,10 @@ package service_test
 
 import (
 	"context"
-	"errors"
-	"testing"
-	"time"
-
 	"stellarbill-backend/internal/repository"
 	"stellarbill-backend/internal/service"
+	"testing"
+	"time"
 )
 
 func TestGetDetail_HappyPath(t *testing.T) {
@@ -140,7 +138,7 @@ func TestGetDetail_SoftDeleted(t *testing.T) {
 	)
 
 	_, _, err := svc.GetDetail(context.Background(), "tenant-1", "cust-3", "sub-3")
-	if !errors.Is(err, service.ErrDeleted) {
+	if err != service.ErrDeleted {
 		t.Errorf("expected ErrDeleted, got %v", err)
 	}
 }
@@ -152,7 +150,7 @@ func TestGetDetail_NotFound(t *testing.T) {
 	)
 
 	_, _, err := svc.GetDetail(context.Background(), "tenant-1", "cust-x", "sub-unknown")
-	if !errors.Is(err, service.ErrNotFound) {
+	if err != service.ErrNotFound {
 		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }
@@ -176,7 +174,7 @@ func TestGetDetail_UnparseableAmount(t *testing.T) {
 	)
 
 	_, _, err := svc.GetDetail(context.Background(), "tenant-1", "cust-4", "sub-4")
-	if !errors.Is(err, service.ErrBillingParse) {
+	if err != service.ErrBillingParse {
 		t.Errorf("expected ErrBillingParse, got %v", err)
 	}
 }
@@ -200,7 +198,7 @@ func TestGetDetail_WrongCaller(t *testing.T) {
 	)
 
 	_, _, err := svc.GetDetail(context.Background(), "tenant-1", "cust-other", "sub-5")
-	if !errors.Is(err, service.ErrForbidden) {
+	if err != service.ErrForbidden {
 		t.Errorf("expected ErrForbidden, got %v", err)
 	}
 }
@@ -224,7 +222,7 @@ func TestGetDetail_CrossTenantPrevention(t *testing.T) {
 	)
 
 	_, _, err := svc.GetDetail(context.Background(), "tenant-2", "cust-6", "sub-6")
-	if !errors.Is(err, service.ErrNotFound) {
+	if err != service.ErrNotFound {
 		t.Errorf("expected ErrNotFound for cross-tenant query, got %v", err)
 	}
 }
@@ -264,70 +262,5 @@ func TestGetDetail_NormalizesNextBillingToUTC(t *testing.T) {
 	}
 	if *detail.BillingSummary.NextBillingDate != "2026-04-23T08:30:00Z" {
 		t.Fatalf("unexpected normalized next_billing_date: %s", *detail.BillingSummary.NextBillingDate)
-	}
-}
-
-func TestProcessBatch_SuccessAndValidationErrors(t *testing.T) {
-	sub1 := &repository.SubscriptionRow{ID: "sub-a", TenantID: "tenant-1", Status: "active"}
-	sub2 := &repository.SubscriptionRow{ID: "sub-b", TenantID: "tenant-1", Status: "active"}
-
-	svc := service.NewSubscriptionService(
-		repository.NewMockSubscriptionRepo(sub1, sub2),
-		repository.NewMockPlanRepo(),
-	)
-
-	results, err := svc.ProcessBatch(context.Background(), "tenant-1", "actor-1", []service.BatchSubscriptionOperation{
-		{IdempotencyKey: "k-1", SubscriptionID: "sub-a", Status: "paused"},
-		{IdempotencyKey: "k-2", SubscriptionID: "sub-b", Status: "bogus"},
-	})
-	if err != nil {
-		t.Fatalf("expected no batch error, got %v", err)
-	}
-	if len(results) != 2 {
-		t.Fatalf("expected 2 results, got %d", len(results))
-	}
-	if results[0].StatusCode != http.StatusOK {
-		t.Fatalf("expected first result to succeed, got %d", results[0].StatusCode)
-	}
-	if results[1].StatusCode != http.StatusUnprocessableEntity {
-		t.Fatalf("expected invalid status to return 422, got %d", results[1].StatusCode)
-	}
-}
-
-func TestProcessBatch_RequiresIdempotencyKeyPerItem(t *testing.T) {
-	svc := service.NewSubscriptionService(
-		repository.NewMockSubscriptionRepo(&repository.SubscriptionRow{ID: "sub-c", TenantID: "tenant-1", Status: "active"}),
-		repository.NewMockPlanRepo(),
-	)
-
-	results, err := svc.ProcessBatch(context.Background(), "tenant-1", "actor-1", []service.BatchSubscriptionOperation{{SubscriptionID: "sub-c", Status: "paused"}})
-	if err != nil {
-		t.Fatalf("expected no batch error, got %v", err)
-	}
-	if len(results) != 1 {
-		t.Fatalf("expected 1 result, got %d", len(results))
-	}
-	if results[0].StatusCode != http.StatusBadRequest {
-		t.Fatalf("expected 400 for missing idempotency key, got %d", results[0].StatusCode)
-	}
-}
-
-func TestProcessBatch_RejectsOversizedBatches(t *testing.T) {
-	svc := service.NewSubscriptionService(
-		repository.NewMockSubscriptionRepo(&repository.SubscriptionRow{ID: "sub-d", TenantID: "tenant-1", Status: "active"}),
-		repository.NewMockPlanRepo(),
-	)
-
-	ops := make([]service.BatchSubscriptionOperation, 0, 101)
-	for i := 0; i < 101; i++ {
-		ops = append(ops, service.BatchSubscriptionOperation{IdempotencyKey: "k", SubscriptionID: "sub-d", Status: "paused"})
-	}
-
-	results, err := svc.ProcessBatch(context.Background(), "tenant-1", "actor-1", ops)
-	if err == nil {
-		t.Fatal("expected oversize batch error")
-	}
-	if len(results) != 0 {
-		t.Fatalf("expected no results for oversize batch, got %d", len(results))
 	}
 }

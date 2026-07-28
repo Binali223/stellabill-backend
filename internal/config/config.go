@@ -6,11 +6,10 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"stellarbill-backend/internal/secrets"
 	"strconv"
 	"strings"
 	"unicode"
-
-	"stellarbill-backend/internal/secrets"
 )
 
 // ConfigErrorType represents the category of configuration error
@@ -61,8 +60,8 @@ type Config struct {
 	RateLimitBurst     int
 	RateLimitWhitelist []string
 	// Tracing configuration
-	TracingExporter    string
-	TracingServiceName string
+	TracingExporter        string
+	TracingServiceName     string
 	SecurityFrameAncestors string
 	SpiffeSocketPath   string
 	SpiffeTrustDomain  string
@@ -88,13 +87,13 @@ type Config struct {
 	//   DB_POOL_HEALTH_CHECK_PERIOD  (default 30)  – how often pgxpool probes idle conns.
 	//   DB_POOL_METRICS_INTERVAL     (default 15)  – how often pool stats are scraped
 	//                                                 into Prometheus gauges.
-	DBPoolMaxConns           int
-	DBPoolMinConns           int
-	DBPoolMaxConnLifetime    int // seconds
-	DBPoolMaxConnIdleTime    int // seconds
-	DBPoolConnectTimeout     int // seconds
-	DBPoolHealthCheckPeriod  int // seconds
-	DBPoolMetricsInterval    int // seconds
+	DBPoolMaxConns          int
+	DBPoolMinConns          int
+	DBPoolMaxConnLifetime   int // seconds
+	DBPoolMaxConnIdleTime   int // seconds
+	DBPoolConnectTimeout    int // seconds
+	DBPoolHealthCheckPeriod int // seconds
+	DBPoolMetricsInterval   int // seconds
 }
 
 // ValidationResult holds the result of configuration validation
@@ -147,8 +146,8 @@ const (
 	MinDBPoolTimeout  = 1   // seconds
 	MaxDBPoolTimeout  = 300 // seconds
 
-	MinHeaderBytes        = 1024        // 1KB
-	MaxAllowedHeaderBytes = 10 << 20    // 10MB
+	MinHeaderBytes        = 1024     // 1KB
+	MaxAllowedHeaderBytes = 10 << 20 // 10MB
 	MinTimeoutSeconds     = 1
 	MaxTimeoutSeconds     = 600
 	MinRateLimitRPS       = 1
@@ -192,20 +191,18 @@ func Load(opts ...Option) (Config, error) {
 	}
 
 	cfg := Config{
-		Env:            getEnv("ENV", "development"),
-		Port:           DefaultPort,
-		DBConn:         "",
-		JWTSecret:      "",
-		MaxHeaderBytes: MaxHeaderBytes,
-		ReadTimeout:    DefaultReadTimeout,
-		WriteTimeout:   DefaultWriteTimeout,
-		IdleTimeout:    DefaultIdleTimeout,
-		TracingExporter:    getEnv("TRACING_EXPORTER", "stdout"),
-		TracingServiceName: getEnv("TRACING_SERVICE_NAME", "stellabill-backend"),
+		Env:                    getEnv("ENV", "development"),
+		Port:                   DefaultPort,
+		DBConn:                 "",
+		JWTSecret:              "",
+		MaxHeaderBytes:         MaxHeaderBytes,
+		ReadTimeout:            DefaultReadTimeout,
+		WriteTimeout:           DefaultWriteTimeout,
+		IdleTimeout:            DefaultIdleTimeout,
+		TracingExporter:        getEnv("TRACING_EXPORTER", "stdout"),
+		TracingServiceName:     getEnv("TRACING_SERVICE_NAME", "stellabill-backend"),
 		SecurityFrameAncestors: getEnv("SECURITY_FRAME_ANCESTORS", "'none'"),
-		SpiffeSocketPath:   getEnv("SPIFFE_ENDPOINT_SOCKET", ""),
-		SpiffeTrustDomain:  getEnv("SPIFFE_TRUST_DOMAIN", "example.org"),
-		MaxRequestSize:         getEnvInt64("MAX_REQUEST_SIZE", 1024*1024*10), // 10MB
+		MaxRequestSize:         getEnvInt64("MAX_REQUEST_SIZE", 1024*1024*10),      // 10MB
 		MaxGzipUncompressed:    getEnvInt64("MAX_GZIP_UNCOMPRESSED", 1024*1024*50), // 50MB
 		MaxGzipRatio:           getEnvFloat64("MAX_GZIP_RATIO", 10.0),
 		// DB pool — safe production defaults
@@ -699,4 +696,3 @@ func validateDBPool(c *Config, result *ValidationResult) {
 				c.DBPoolMaxConnIdleTime, c.DBPoolMaxConnLifetime))
 	}
 }
-

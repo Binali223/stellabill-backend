@@ -10,7 +10,7 @@ type contextKey string
 
 const (
 	requestIDKey contextKey = "request_id"
-	jobIDKey    contextKey = "job_id"
+	jobIDKey     contextKey = "job_id"
 )
 
 func NewID() string {

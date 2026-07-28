@@ -6,10 +6,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"stellarbill-backend/internal/audit"
 	"strings"
 	"testing"
-
-	"stellarbill-backend/internal/audit"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -35,11 +34,11 @@ func TestAuditMiddlewareWiring(t *testing.T) {
 	t.Run("auth_failure_401_logged", func(t *testing.T) {
 		sink := &audit.MemorySink{}
 		r := gin.New()
-		
+
 		// Manually wire minimal middleware for this test
 		logger := audit.NewLogger("test-secret", sink)
 		r.Use(audit.Middleware(logger))
-		
+
 		r.GET("/protected", func(c *gin.Context) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		})
@@ -49,7 +48,7 @@ func TestAuditMiddlewareWiring(t *testing.T) {
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
-		
+
 		entries := sink.Entries()
 		require.Len(t, entries, 1, "expected one audit entry for 401")
 		assert.Equal(t, "auth_failure", entries[0].Action)
@@ -59,10 +58,10 @@ func TestAuditMiddlewareWiring(t *testing.T) {
 	t.Run("auth_failure_403_logged", func(t *testing.T) {
 		sink := &audit.MemorySink{}
 		r := gin.New()
-		
+
 		logger := audit.NewLogger("test-secret", sink)
 		r.Use(audit.Middleware(logger))
-		
+
 		r.GET("/forbidden", func(c *gin.Context) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		})
@@ -72,7 +71,7 @@ func TestAuditMiddlewareWiring(t *testing.T) {
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusForbidden, w.Code)
-		
+
 		entries := sink.Entries()
 		require.Len(t, entries, 1, "expected one audit entry for 403")
 		assert.Equal(t, "auth_failure", entries[0].Action)
@@ -82,10 +81,10 @@ func TestAuditMiddlewareWiring(t *testing.T) {
 	t.Run("admin_purge_logged", func(t *testing.T) {
 		sink := &audit.MemorySink{}
 		r := gin.New()
-		
+
 		logger := audit.NewLogger("test-secret", sink)
 		r.Use(audit.Middleware(logger))
-		
+
 		// Simulate admin purge endpoint
 		r.POST("/admin/purge", func(c *gin.Context) {
 			audit.LogAction(c, "admin_purge", "billing-cache", "success", map[string]string{
@@ -99,7 +98,7 @@ func TestAuditMiddlewareWiring(t *testing.T) {
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		entries := sink.Entries()
 		require.Len(t, entries, 1, "expected one audit entry for admin purge")
 		assert.Equal(t, "admin_purge", entries[0].Action)
@@ -110,10 +109,10 @@ func TestAuditMiddlewareWiring(t *testing.T) {
 	t.Run("reconciliation_logged", func(t *testing.T) {
 		sink := &audit.MemorySink{}
 		r := gin.New()
-		
+
 		logger := audit.NewLogger("test-secret", sink)
 		r.Use(audit.Middleware(logger))
-		
+
 		// Simulate reconciliation endpoint
 		r.POST("/admin/reconcile", func(c *gin.Context) {
 			audit.LogAction(c, "reconciliation.execute", "reconciliation", "success", map[string]string{
@@ -129,7 +128,7 @@ func TestAuditMiddlewareWiring(t *testing.T) {
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		entries := sink.Entries()
 		require.Len(t, entries, 1, "expected one audit entry for reconciliation")
 		assert.Equal(t, "reconciliation.execute", entries[0].Action)
@@ -146,10 +145,10 @@ func TestAuditSinkFallback(t *testing.T) {
 		// Use stderr sink
 		sink := audit.NewStderrSink()
 		logger := audit.NewLogger("test-secret", sink)
-		
+
 		r := gin.New()
 		r.Use(audit.Middleware(logger))
-		
+
 		r.GET("/test", func(c *gin.Context) {
 			audit.LogAction(c, "test_action", "test_resource", "success", nil)
 			c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -160,7 +159,7 @@ func TestAuditSinkFallback(t *testing.T) {
 		r.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var resp map[string]string
 		err := json.Unmarshal(w.Body.Bytes(), &resp)
 		require.NoError(t, err)
@@ -171,10 +170,10 @@ func TestAuditSinkFallback(t *testing.T) {
 		// Use an invalid path to simulate write failure
 		sink := audit.NewFileSink("/invalid/path/audit.log")
 		logger := audit.NewLogger("test-secret", sink)
-		
+
 		r := gin.New()
 		r.Use(audit.Middleware(logger))
-		
+
 		r.GET("/test", func(c *gin.Context) {
 			// LogAction should not panic even if sink fails
 			audit.LogAction(c, "test_action", "test_resource", "success", nil)
@@ -197,10 +196,10 @@ func TestAuditPIIRedaction(t *testing.T) {
 	t.Run("auth_header_redacted", func(t *testing.T) {
 		sink := &audit.MemorySink{}
 		r := gin.New()
-		
+
 		logger := audit.NewLogger("test-secret", sink)
 		r.Use(audit.Middleware(logger))
-		
+
 		r.GET("/protected", func(c *gin.Context) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		})
@@ -212,7 +211,7 @@ func TestAuditPIIRedaction(t *testing.T) {
 
 		entries := sink.Entries()
 		require.Len(t, entries, 1)
-		
+
 		// The auth_header should be redacted
 		authHeader, ok := entries[0].Metadata["auth_header"]
 		if ok {
@@ -223,10 +222,10 @@ func TestAuditPIIRedaction(t *testing.T) {
 	t.Run("password_metadata_redacted", func(t *testing.T) {
 		sink := &audit.MemorySink{}
 		r := gin.New()
-		
+
 		logger := audit.NewLogger("test-secret", sink)
 		r.Use(audit.Middleware(logger))
-		
+
 		r.POST("/action", func(c *gin.Context) {
 			audit.LogAction(c, "user_update", "user/123", "success", map[string]string{
 				"password": "secret123",
@@ -241,12 +240,12 @@ func TestAuditPIIRedaction(t *testing.T) {
 
 		entries := sink.Entries()
 		require.Len(t, entries, 1)
-		
+
 		// Password should be redacted
 		password, ok := entries[0].Metadata["password"]
 		require.True(t, ok)
 		assert.Equal(t, "***REDACTED***", password)
-		
+
 		// Username should not be redacted
 		username, ok := entries[0].Metadata["username"]
 		require.True(t, ok)
@@ -264,17 +263,17 @@ func TestAuditConfigFromEnv(t *testing.T) {
 		// This would normally be done in config.Load()
 		path := os.Getenv("AUDIT_LOG_PATH")
 		assert.Equal(t, testPath, path)
-		
+
 		sink := audit.NewFileSink(path)
 		assert.NotNil(t, sink)
 	})
 
 	t.Run("audit_log_path_empty_uses_stderr", func(t *testing.T) {
 		os.Unsetenv("AUDIT_LOG_PATH")
-		
+
 		path := os.Getenv("AUDIT_LOG_PATH")
 		assert.Empty(t, path)
-		
+
 		// When empty, we should use stderr sink
 		var sink audit.Sink
 		if path == "" {
@@ -293,15 +292,15 @@ func TestAuditChaining(t *testing.T) {
 	t.Run("events_are_chained", func(t *testing.T) {
 		sink := &audit.MemorySink{}
 		logger := audit.NewLogger("test-secret", sink)
-		
+
 		r := gin.New()
 		r.Use(audit.Middleware(logger))
-		
+
 		r.POST("/action1", func(c *gin.Context) {
 			audit.LogAction(c, "action1", "resource1", "success", nil)
 			c.JSON(http.StatusOK, gin.H{"status": "ok"})
 		})
-		
+
 		r.POST("/action2", func(c *gin.Context) {
 			audit.LogAction(c, "action2", "resource2", "success", nil)
 			c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -319,11 +318,11 @@ func TestAuditChaining(t *testing.T) {
 
 		entries := sink.Entries()
 		require.Len(t, entries, 2)
-		
+
 		// First event should have empty prev_hash
 		assert.Empty(t, entries[0].PrevHash)
 		assert.NotEmpty(t, entries[0].Hash)
-		
+
 		// Second event should reference first event's hash
 		assert.Equal(t, entries[0].Hash, entries[1].PrevHash)
 		assert.NotEmpty(t, entries[1].Hash)
@@ -335,31 +334,31 @@ func TestAuditChaining(t *testing.T) {
 func TestFileSinkCreatesFile(t *testing.T) {
 	t.Run("file_sink_creates_file", func(t *testing.T) {
 		tmpFile := t.TempDir() + "/audit-test.log"
-		
+
 		sink := audit.NewFileSink(tmpFile)
 		logger := audit.NewLogger("test-secret", sink)
-		
+
 		event := audit.AuditEvent{
 			Actor:    "test-user",
 			Action:   "test-action",
 			Resource: "test-resource",
 			Outcome:  "success",
 		}
-		
+
 		_, err := logger.Log(nil, event)
 		require.NoError(t, err)
-		
+
 		// Verify file was created
 		_, err = os.Stat(tmpFile)
 		require.NoError(t, err, "audit log file should be created")
-		
+
 		// Verify content is JSONL
 		content, err := os.ReadFile(tmpFile)
 		require.NoError(t, err)
-		
+
 		lines := strings.Split(strings.TrimSpace(string(content)), "\n")
 		assert.Len(t, lines, 1, "should have one line")
-		
+
 		var logged audit.AuditEvent
 		err = json.Unmarshal([]byte(lines[0]), &logged)
 		require.NoError(t, err, "should be valid JSON")
@@ -368,10 +367,10 @@ func TestFileSinkCreatesFile(t *testing.T) {
 
 	t.Run("file_sink_appends", func(t *testing.T) {
 		tmpFile := t.TempDir() + "/audit-append.log"
-		
+
 		sink := audit.NewFileSink(tmpFile)
 		logger := audit.NewLogger("test-secret", sink)
-		
+
 		// Write first event
 		event1 := audit.AuditEvent{
 			Actor:    "user1",
@@ -381,7 +380,7 @@ func TestFileSinkCreatesFile(t *testing.T) {
 		}
 		_, err := logger.Log(nil, event1)
 		require.NoError(t, err)
-		
+
 		// Write second event
 		event2 := audit.AuditEvent{
 			Actor:    "user2",
@@ -391,11 +390,11 @@ func TestFileSinkCreatesFile(t *testing.T) {
 		}
 		_, err = logger.Log(nil, event2)
 		require.NoError(t, err)
-		
+
 		// Verify both events are in the file
 		content, err := os.ReadFile(tmpFile)
 		require.NoError(t, err)
-		
+
 		lines := strings.Split(strings.TrimSpace(string(content)), "\n")
 		assert.Len(t, lines, 2, "should have two lines")
 	})
@@ -414,22 +413,22 @@ func TestStderrSinkWrites(t *testing.T) {
 
 		sink := audit.NewStderrSink()
 		logger := audit.NewLogger("test-secret", sink)
-		
+
 		event := audit.AuditEvent{
 			Actor:    "test-user",
 			Action:   "test-action",
 			Resource: "test-resource",
 			Outcome:  "success",
 		}
-		
+
 		_, err := logger.Log(nil, event)
 		require.NoError(t, err)
-		
+
 		// Close writer and read from pipe
 		w.Close()
 		var buf bytes.Buffer
 		buf.ReadFrom(r)
-		
+
 		output := buf.String()
 		assert.Contains(t, output, "test-action")
 		assert.Contains(t, output, "test-user")

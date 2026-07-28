@@ -6,12 +6,11 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/auth"
+	"stellarbill-backend/internal/reconciliation"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-
-	"stellarbill-backend/internal/auth"
-	"stellarbill-backend/internal/reconciliation"
 )
 
 type stubAdapter struct {
@@ -32,6 +31,7 @@ func (s *stubStore) SaveReports(reports []reconciliation.Report) error { return 
 func (s *stubStore) ListReports() ([]reconciliation.Report, error) {
 	return s.list, s.listErr
 }
+
 func (s *stubStore) ListReportsByTenant(tenantID string) ([]reconciliation.Report, error) {
 	return s.list, s.listErr
 }

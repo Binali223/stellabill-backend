@@ -4,15 +4,14 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/middleware"
+	"stellarbill-backend/internal/repository"
+	"stellarbill-backend/internal/service"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-
-	"stellarbill-backend/internal/middleware"
-	"stellarbill-backend/internal/repository"
-	"stellarbill-backend/internal/service"
 )
 
 const testJWTSecret = "integration-test-secret"

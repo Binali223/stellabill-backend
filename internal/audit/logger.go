@@ -64,7 +64,7 @@ func (l *Logger) Log(ctx context.Context, event AuditEvent) (AuditEvent, error) 
 	} else {
 		event.Timestamp = event.Timestamp.UTC()
 	}
-	
+
 	// 2. Redaction (PII Protection)
 	event.Metadata = l.redact(event.Metadata)
 
@@ -83,9 +83,9 @@ func (l *Logger) Log(ctx context.Context, event AuditEvent) (AuditEvent, error) 
 
 func (l *Logger) computeHash(e AuditEvent) string {
 	// Create a stable string representation for hashing
-	raw := fmt.Sprintf("%d|%s|%s|%s|%s|%s|%v", 
+	raw := fmt.Sprintf("%d|%s|%s|%s|%s|%s|%v",
 		e.Timestamp.Unix(), e.Actor, e.Action, e.Resource, e.Outcome, e.PrevHash, e.Metadata)
-	
+
 	h := hmac.New(sha256.New, l.secret)
 	h.Write([]byte(raw))
 	return hex.EncodeToString(h.Sum(nil))
@@ -97,14 +97,14 @@ func (l *Logger) redact(meta map[string]interface{}) map[string]interface{} {
 	if meta == nil {
 		return nil
 	}
-	
+
 	sensitiveKeys := []string{"password", "token", "secret", "auth", "key", "cvv", "card"}
 	newMeta := make(map[string]interface{})
 
 	for k, v := range meta {
 		valStr := strings.ToLower(fmt.Sprintf("%v", v))
 		isSensitive := false
-		
+
 		for _, sk := range sensitiveKeys {
 			if strings.Contains(strings.ToLower(k), sk) || strings.Contains(valStr, "bearer") {
 				isSensitive = true

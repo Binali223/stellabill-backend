@@ -13,6 +13,10 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - name: Formatting check
+        run: |
+          go install mvdan.cc/gofumpt@latest
+          test -z "$(gofumpt -l .)"
       - name: Unit + contract tests
         run: go test ./...
       - name: OpenAPI validation

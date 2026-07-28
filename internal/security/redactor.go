@@ -12,7 +12,7 @@ var fullyRedactedFieldNames = map[string]bool{
 	"token":         true,
 	"jwt":           true,
 	"secret":        true,
-	"password":     true,
+	"password":      true,
 	"api_key":       true,
 	"apikey":        true,
 	"authorization": true,
@@ -20,8 +20,10 @@ var fullyRedactedFieldNames = map[string]bool{
 	"refresh_token": true,
 }
 
-var idPattern = regexp.MustCompile(`(?i)\b(customer|cust|subscription|sub|job)[-_]?([a-zA-Z0-9]+)\b`)
-var amountPattern = regexp.MustCompile(`\$?\d+\.\d{2}`)
+var (
+	idPattern     = regexp.MustCompile(`(?i)\b(customer|cust|subscription|sub|job)[-_]?([a-zA-Z0-9]+)\b`)
+	amountPattern = regexp.MustCompile(`\$?\d+\.\d{2}`)
+)
 
 // MaskPII redacts simple PII patterns from a string.
 func MaskPII(input string) string {

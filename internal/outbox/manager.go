@@ -3,10 +3,9 @@ package outbox
 import (
 	"database/sql"
 	"fmt"
-	"time"
-
 	"stellarbill-backend/internal/config"
 	"stellarbill-backend/internal/logger"
+	"time"
 )
 
 // Manager handles the outbox system lifecycle
@@ -45,31 +44,31 @@ func NewManager(db *sql.DB, cfg config.Config) (*Manager, error) {
 
 // Start starts the outbox system
 func (m *Manager) Start() error {
-	logger.Log.Info("Starting outbox manager...")
-	
+	logger.SafePrintf("Starting outbox manager...")
+
 	// Run database migrations
 	if err := m.runMigrations(); err != nil {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
-	
+
 	// Start the dispatcher
 	if err := m.service.Start(); err != nil {
 		return fmt.Errorf("failed to start outbox service: %w", err)
 	}
-	
-	logger.Log.Info("Outbox manager started successfully")
+
+	logger.SafePrintf("Outbox manager started successfully")
 	return nil
 }
 
 // Stop stops the outbox system
 func (m *Manager) Stop() error {
-	logger.Log.Info("Stopping outbox manager...")
-	
+	logger.SafePrintf("Stopping outbox manager...")
+
 	if err := m.service.Stop(); err != nil {
 		return fmt.Errorf("failed to stop outbox service: %w", err)
 	}
-	
-	logger.Log.Info("Outbox manager stopped")
+
+	logger.SafePrintf("Outbox manager stopped")
 	return nil
 }
 
@@ -90,8 +89,8 @@ func (m *Manager) Health() error {
 
 // runMigrations runs the necessary database migrations
 func (m *Manager) runMigrations() error {
-	logger.Log.Info("Running outbox migrations...")
-	
+	logger.SafePrintf("Running outbox migrations...")
+
 	// Check if outbox table exists
 	var exists bool
 	err := m.db.QueryRow(`
@@ -100,18 +99,17 @@ func (m *Manager) runMigrations() error {
 			WHERE table_name = 'outbox_events'
 		)
 	`).Scan(&exists)
-	
 	if err != nil {
 		return fmt.Errorf("failed to check if outbox table exists: %w", err)
 	}
-	
+
 	if !exists {
-		logger.Log.Info("Creating outbox table...")
+		logger.SafePrintf("Creating outbox table...")
 		if err := m.createOutboxTable(); err != nil {
 			return fmt.Errorf("failed to create outbox table: %w", err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -162,30 +160,30 @@ func (m *Manager) createOutboxTable() error {
 			FOR EACH ROW
 			EXECUTE FUNCTION update_outbox_updated_at();
 	`
-	
+
 	_, err := m.db.Exec(query)
 	if err != nil {
 		return fmt.Errorf("failed to create outbox table: %w", err)
 	}
-	
-	logger.Log.Info("Outbox table created successfully")
+
+	logger.SafePrintf("Outbox table created successfully")
 	return nil
 }
 
 // GetStats returns outbox statistics for monitoring
 func (m *Manager) GetStats() (map[string]interface{}, error) {
 	stats := make(map[string]interface{})
-	
+
 	// Get pending events count
 	pendingCount, err := m.service.GetPendingEventsCount()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get pending events count: %w", err)
 	}
 	stats["pending_events"] = pendingCount
-	
+
 	// Get dispatcher status
 	stats["dispatcher_running"] = m.service.IsRunning()
-	
+
 	// Get database health
 	if err := m.db.Ping(); err != nil {
 		stats["database_health"] = "unhealthy"
@@ -193,6 +191,6 @@ func (m *Manager) GetStats() (map[string]interface{}, error) {
 	} else {
 		stats["database_health"] = "healthy"
 	}
-	
+
 	return stats, nil
 }

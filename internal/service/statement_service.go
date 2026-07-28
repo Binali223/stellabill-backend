@@ -3,28 +3,14 @@ package service
 import (
 	"context"
 	"errors"
-	"time"
-
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
-
 	"stellarbill-backend/internal/repository"
-	"stellarbill-backend/internal/storage/s3"
 	"stellarbill-backend/internal/timeutil"
 )
-
-// ExportResult is the response payload returned by statement export operations.
-type ExportResult struct {
-	ObjectKey string
-	URL       string
-	ExpiresAt time.Time
-}
 
 // StatementService defines the business logic interface for billing statements.
 type StatementService interface {
 	GetDetail(ctx context.Context, callerID string, roles []string, statementID string) (*StatementDetail, []string, error)
 	ListByCustomer(ctx context.Context, callerID string, roles []string, customerID string, q repository.StatementQuery) (*ListStatementsDetail, int, []string, error)
-	ExportStatements(ctx context.Context, callerID string, roles []string, tenantID, customerID string, uploader s3.S3Uploader) (*ExportResult, error)
 }
 
 // statementService is the concrete implementation of StatementService.
@@ -151,16 +137,6 @@ func (s *statementService) ListByCustomer(ctx context.Context, callerID string, 
 		return nil, 0, nil, ErrForbidden
 	}
 
-	if q.Filter != nil {
-		compiled, err := q.Filter.ToSquirrel()
-		if err != nil {
-			return nil, 0, nil, err
-		}
-		q.FilterSQL = compiled
-		span := trace.SpanFromContext(ctx)
-		span.SetAttributes(attribute.String("statements.filter.fingerprint", q.Filter.Fingerprint()))
-	}
-
 	// 2. Fetch statement rows for customer with filters and pagination.
 	rows, count, err := s.stmtRepo.ListByCustomerID(ctx, customerID, q)
 	if err != nil {
@@ -191,14 +167,6 @@ func (s *statementService) ListByCustomer(ctx context.Context, callerID string, 
 	}
 
 	return result, count, warnings, nil
-}
-
-func (s *statementService) ExportStatements(_ context.Context, _ string, _ []string, _, _ string, _ s3.S3Uploader) (*ExportResult, error) {
-	return &ExportResult{
-		ObjectKey: "exports/default.csv.gz",
-		URL:       "https://example.invalid/export",
-		ExpiresAt: time.Now().UTC().Add(15 * time.Minute),
-	}, nil
 }
 
 func normalizeRFC3339OrKeep(raw string) string {

@@ -4,17 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
-	"strconv"
-	"strings"
-
 	"stellarbill-backend/internal/repository"
 	"stellarbill-backend/internal/security"
 	"stellarbill-backend/internal/subscriptions"
 	"stellarbill-backend/internal/timeutil"
+	"strconv"
+	"strings"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -23,16 +19,10 @@ import (
 
 var tracer = otel.Tracer("service/subscriptions")
 
-var batchOpsTotal = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "batch_ops_total",
-	Help: "Total number of bulk subscription operations processed by outcome.",
-}, []string{"outcome"})
-
 // SubscriptionService defines the business logic interface for subscriptions.
 type SubscriptionService interface {
 	GetDetail(ctx context.Context, tenantID string, callerID string, subscriptionID string) (*SubscriptionDetail, []string, error)
 	ChangeStatus(ctx context.Context, tenantID string, actorID string, subscriptionID string, targetStatus string) (*SubscriptionStatusChange, error)
-	ProcessBatch(ctx context.Context, tenantID string, actorID string, operations []BatchSubscriptionOperation) ([]BatchSubscriptionResult, error)
 }
 
 // subscriptionService is the concrete implementation of SubscriptionService.
@@ -63,7 +53,7 @@ func (s *subscriptionService) GetDetail(ctx context.Context, tenantID string, ca
 	// 1. Fetch subscription row scoped to tenant.
 	row, err := s.subRepo.FindByIDAndTenant(ctx, subscriptionID, tenantID)
 	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
+		if err == repository.ErrNotFound {
 			return nil, nil, ErrNotFound
 		}
 		return nil, nil, err
@@ -83,7 +73,7 @@ func (s *subscriptionService) GetDetail(ctx context.Context, tenantID string, ca
 	var planMeta *PlanMetadata
 	planRow, err := s.planRepo.FindByID(ctx, row.PlanID)
 	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
+		if err == repository.ErrNotFound {
 			warnings = append(warnings, "plan not found")
 		} else {
 			return nil, nil, err
@@ -196,57 +186,4 @@ func (s *subscriptionService) ChangeStatus(ctx context.Context, tenantID string,
 		PreviousStatus: previousStatus,
 		Changed:        true,
 	}, nil
-}
-
-// ProcessBatch applies a set of status-change operations to a tenant-scoped subscription set.
-// Each item requires a unique idempotency key and partial failures are reported individually.
-func (s *subscriptionService) ProcessBatch(ctx context.Context, tenantID string, actorID string, operations []BatchSubscriptionOperation) ([]BatchSubscriptionResult, error) {
-	if len(operations) > 100 {
-		return nil, fmt.Errorf("batch size exceeds limit of 100")
-	}
-
-	results := make([]BatchSubscriptionResult, 0, len(operations))
-	for idx, op := range operations {
-		if strings.TrimSpace(op.IdempotencyKey) == "" {
-			results = append(results, BatchSubscriptionResult{Index: idx, StatusCode: http.StatusBadRequest, Message: "idempotency_key is required"})
-			batchOpsTotal.WithLabelValues("validation_error").Inc()
-			continue
-		}
-		if strings.TrimSpace(op.SubscriptionID) == "" {
-			results = append(results, BatchSubscriptionResult{Index: idx, StatusCode: http.StatusBadRequest, Message: "subscription_id is required"})
-			batchOpsTotal.WithLabelValues("validation_error").Inc()
-			continue
-		}
-		if !subscriptions.IsKnownStatus(op.Status) {
-			results = append(results, BatchSubscriptionResult{Index: idx, StatusCode: http.StatusUnprocessableEntity, Message: fmt.Sprintf("invalid status %q", op.Status)})
-			batchOpsTotal.WithLabelValues("validation_error").Inc()
-			continue
-		}
-
-		change, err := s.ChangeStatus(ctx, tenantID, actorID, op.SubscriptionID, op.Status)
-		if err != nil {
-			statusCode := http.StatusInternalServerError
-			message := err.Error()
-			switch {
-			case errors.Is(err, ErrNotFound):
-				statusCode = http.StatusNotFound
-			case errors.Is(err, ErrDeleted):
-				statusCode = http.StatusGone
-			case errors.Is(err, ErrForbidden):
-				statusCode = http.StatusForbidden
-			case errors.Is(err, ErrInvalidTransition), errors.Is(err, ErrUnknownCurrentState), errors.Is(err, ErrInvalidStatus):
-				statusCode = http.StatusConflict
-			default:
-				statusCode = http.StatusInternalServerError
-			}
-			results = append(results, BatchSubscriptionResult{Index: idx, StatusCode: statusCode, Message: message})
-			batchOpsTotal.WithLabelValues("error").Inc()
-			continue
-		}
-
-		results = append(results, BatchSubscriptionResult{Index: idx, StatusCode: http.StatusOK, Message: "ok", ID: change.ID})
-		batchOpsTotal.WithLabelValues("success").Inc()
-	}
-
-	return results, nil
 }

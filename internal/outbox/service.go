@@ -46,12 +46,6 @@ type ServiceConfig struct {
 func NewService(db *sql.DB, config ServiceConfig) (*Service, error) {
 	repo := NewPostgresRepository(db)
 
-	pool := config.HTTPPool
-	if pool == nil {
-		pool = defaultHTTPPool
-	}
-	httpClient := NewPooledHTTPClient(pool)
-
 	// Create publisher based on configuration
 	var publisher Publisher
 	switch config.PublisherType {
@@ -79,7 +73,7 @@ func NewService(db *sql.DB, config ServiceConfig) (*Service, error) {
 		}
 		publisher = NewJWEPublisher(publisher, config.JWE.Keys, encryptor, sensitive)
 	}
-	
+
 	dispatcher := NewDispatcher(repo, publisher, config.DispatcherConfig)
 
 	return &Service{
@@ -110,7 +104,7 @@ func (s *Service) buildEvent(eventType string, data interface{}, aggregateID, ag
 	if aggregateType != nil && aggregateID != nil && *aggregateType == "subscriber" {
 		subscriberID = *aggregateID
 	}
-		if dataMap, ok := data.(map[string]interface{}); ok {
+	if dataMap, ok := data.(map[string]interface{}); ok {
 		if sid, ok := dataMap["subscriber_id"].(string); ok && sid != "" {
 			subscriberID = sid
 		} else if cid, ok := dataMap["customer_id"].(string); ok && cid != "" {
@@ -137,18 +131,18 @@ func (s *Service) buildEvent(eventType string, data interface{}, aggregateID, ag
 	if err != nil {
 		if IsPermanentPublishError(err) {
 			event := &Event{
-				ID:            uuid.New(),
-				EventType:     eventType,
-				EventData:     mustMarshalEventData(eventType, data),
-				AggregateID:   aggregateID,
-				AggregateType: aggregateType,
-				OccurredAt:    time.Now(),
-				Status:        StatusFailed,
-				RetryCount:    0,
-				MaxRetries:    3,
-				CreatedAt:     time.Now(),
-				UpdatedAt:     time.Now(),
-				Version:       1,
+				ID:              uuid.New(),
+				EventType:       eventType,
+				EventData:       mustMarshalEventData(eventType, data),
+				AggregateID:     aggregateID,
+				AggregateType:   aggregateType,
+				OccurredAt:      time.Now(),
+				Status:          StatusFailed,
+				RetryCount:      0,
+				MaxRetries:      3,
+				CreatedAt:       time.Now(),
+				UpdatedAt:       time.Now(),
+				Version:         1,
 				DeduplicationID: deduplicationID,
 			}
 			errMsg := err.Error()
@@ -182,17 +176,17 @@ func (s *Service) storeEventInTransaction(ctx context.Context, event *Event) err
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback()
-	
+
 	// Store the event
 	if err := s.repository.Store(event); err != nil {
 		return fmt.Errorf("failed to store event in transaction: %w", err)
 	}
-	
+
 	// Commit the transaction
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -245,12 +239,12 @@ func (s *Service) Health() error {
 	if err := s.db.Ping(); err != nil {
 		return fmt.Errorf("database health check failed: %w", err)
 	}
-	
+
 	// Check dispatcher status
 	if !s.dispatcher.IsRunning() {
 		return fmt.Errorf("dispatcher is not running")
 	}
-	
+
 	return nil
 }
 
@@ -282,11 +276,11 @@ type DomainEvent interface {
 
 // SubscriptionCreated represents a subscription created event
 type SubscriptionCreated struct {
-	ID           string    `json:"id"`
-	CustomerID   string    `json:"customer_id"`
-	PlanID       string    `json:"plan_id"`
-	Status       string    `json:"status"`
-	Timestamp   time.Time `json:"occurred_at"`
+	ID         string    `json:"id"`
+	CustomerID string    `json:"customer_id"`
+	PlanID     string    `json:"plan_id"`
+	Status     string    `json:"status"`
+	Timestamp  time.Time `json:"occurred_at"`
 }
 
 func (e SubscriptionCreated) EventType() string {
@@ -312,12 +306,12 @@ func (e SubscriptionCreated) OccurredAt() time.Time {
 
 // PaymentProcessed represents a payment processed event
 type PaymentProcessed struct {
-	ID           string    `json:"id"`
-	SubscriptionID string   `json:"subscription_id"`
-	Amount       float64   `json:"amount"`
-	Currency     string    `json:"currency"`
-	Status       string    `json:"status"`
-	Timestamp   time.Time `json:"occurred_at"`
+	ID             string    `json:"id"`
+	SubscriptionID string    `json:"subscription_id"`
+	Amount         float64   `json:"amount"`
+	Currency       string    `json:"currency"`
+	Status         string    `json:"status"`
+	Timestamp      time.Time `json:"occurred_at"`
 }
 
 func (e PaymentProcessed) EventType() string {

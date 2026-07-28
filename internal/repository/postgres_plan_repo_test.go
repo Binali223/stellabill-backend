@@ -5,11 +5,10 @@ import (
 	"database/sql"
 	"errors"
 	"regexp"
+	"stellarbill-backend/internal/config"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-
-	"stellarbill-backend/internal/config"
 )
 
 func TestPostgresPlanRepoFindByID(t *testing.T) {

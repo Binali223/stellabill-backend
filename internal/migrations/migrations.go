@@ -12,9 +12,7 @@ import (
 	"strings"
 )
 
-var (
-	filenameRe = regexp.MustCompile(`^(\d+)_([a-zA-Z0-9][a-zA-Z0-9_-]*)\.(up|down)\.sql$`)
-)
+var filenameRe = regexp.MustCompile(`^(\d+)_([a-zA-Z0-9][a-zA-Z0-9_-]*)\.(up|down)\.sql$`)
 
 type Migration struct {
 	Version int64

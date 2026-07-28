@@ -5,14 +5,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"sync"
-	"sync/atomic"
-	"time"
-
 	"stellarbill-backend/internal/cache"
 	"stellarbill-backend/internal/featureflags"
 	"stellarbill-backend/internal/logger"
 	"stellarbill-backend/internal/repository"
+	"sync"
+	"sync/atomic"
+	"time"
 )
 
 // StatementArchiveConfig holds configuration for the statement archival job.

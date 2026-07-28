@@ -4,11 +4,11 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/repository"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"stellarbill-backend/internal/repository"
 )
 
 var planRepository repository.PlanRepository
@@ -37,6 +37,7 @@ type mockPlanRepo struct {
 func (m *mockPlanRepo) List(ctx context.Context) ([]*repository.PlanRow, error) {
 	return m.plans, nil
 }
+
 func (m *mockPlanRepo) FindByID(ctx context.Context, id string) (*repository.PlanRow, error) {
 	return nil, nil
 }

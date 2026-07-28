@@ -205,7 +205,7 @@ func TestValidateRequiredFields(t *testing.T) {
 			name: "missing topics",
 			event: &SorobanEvent{
 				EventType: EventSubscriptionCreated,
-				Data:     json.RawMessage(`{}`),
+				Data:      json.RawMessage(`{}`),
 			},
 			wantError: true,
 			errorMsg:  "topics are required",
@@ -214,7 +214,7 @@ func TestValidateRequiredFields(t *testing.T) {
 			name: "missing data",
 			event: &SorobanEvent{
 				EventType: EventSubscriptionCreated,
-				Topics:   []string{"topic1"},
+				Topics:    []string{"topic1"},
 			},
 			wantError: true,
 			errorMsg:  "data is required",
@@ -281,19 +281,19 @@ func TestMalformedEventRejection(t *testing.T) {
 	decoder := NewEventDecoder()
 
 	malformedEvents := []struct {
-		name          string
-		eventData    string
+		name        string
+		eventData   string
 		expectError bool
 	}{
 		{
-			name:          "invalid base64",
-			eventData:      "NOT_VALID_JSON",
-			expectError:   true,
+			name:        "invalid base64",
+			eventData:   "NOT_VALID_JSON",
+			expectError: true,
 		},
 		{
-			name:          "empty event data",
-			eventData:      "",
-			expectError:   true,
+			name:        "empty event data",
+			eventData:   "",
+			expectError: true,
 		},
 	}
 

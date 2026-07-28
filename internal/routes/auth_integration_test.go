@@ -4,19 +4,19 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"stellarbill-backend/internal/auth"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"stellarbill-backend/internal/auth"
 )
 
 func setupTestRouter() (*gin.Engine, string) {
 	gin.SetMode(gin.TestMode)
 
 	secret := "Test-Secret-123!"
-		os.Setenv("RATE_LIMIT_ENABLED", "false")
+	os.Setenv("RATE_LIMIT_ENABLED", "false")
 	os.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/db")
 	os.Setenv("MOCK_DB", "true")
 	os.Setenv("JWT_SECRET", secret)

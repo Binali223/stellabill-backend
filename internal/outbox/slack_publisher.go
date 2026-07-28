@@ -12,7 +12,7 @@ import (
 
 // slackBlock is a single Slack Block Kit block element.
 type slackBlock struct {
-	Type string    `json:"type"`
+	Type string     `json:"type"`
 	Text *slackText `json:"text,omitempty"`
 }
 

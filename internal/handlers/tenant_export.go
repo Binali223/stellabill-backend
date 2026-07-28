@@ -4,11 +4,10 @@ import (
 	"context"
 	"errors"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
-
 	"stellarbill-backend/internal/audit"
 	"stellarbill-backend/internal/service"
+
+	"github.com/gin-gonic/gin"
 )
 
 func getRequiredStringContextValue(c *gin.Context, key, msg string) (string, bool) {
@@ -46,13 +45,6 @@ type exportStatusResponse struct {
 	Status service.ExportJobStatus     `json:"status"`
 	Result *service.TenantExportResult `json:"result,omitempty"`
 	Error  string                      `json:"error,omitempty"`
-}
-
-type exportOperationResponse struct {
-	OperationID string                        `json:"operation_id"`
-	Status      service.ExportOperationStatus `json:"status"`
-	Result      *service.TenantExportResult   `json:"result,omitempty"`
-	Error       string                        `json:"error,omitempty"`
 }
 
 // NewTenantExportHandler returns a gin.HandlerFunc for POST /api/v1/tenants/me/export.

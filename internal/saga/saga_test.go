@@ -3,12 +3,11 @@ package saga_test
 import (
 	"context"
 	"errors"
-	"strings"
-	"testing"
-
 	"stellarbill-backend/internal/repository"
 	"stellarbill-backend/internal/saga"
 	"stellarbill-backend/internal/service"
+	"strings"
+	"testing"
 )
 
 func TestCoordinator_HappyPath(t *testing.T) {

@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"math"
 	"net/http"
 	"os"
@@ -26,8 +25,8 @@ const (
 
 // Dependency check configuration
 const (
-	MaxRetries       = 2
-	InitialBackoff   = 100 * time.Millisecond
+	MaxRetries         = 2
+	InitialBackoff     = 100 * time.Millisecond
 	MaxDatabaseTimeout = 3 * time.Second
 )
 
@@ -58,9 +57,9 @@ type HealthResponse struct {
 
 // DependencyHealth holds the health status of a single dependency
 type DependencyHealth struct {
-	Status  string        `json:"status"`
-	Message string        `json:"message,omitempty"`
-	Latency string        `json:"latency,omitempty"`
+	Status  string                 `json:"status"`
+	Message string                 `json:"message,omitempty"`
+	Latency string                 `json:"latency,omitempty"`
 	Details map[string]interface{} `json:"details,omitempty"`
 }
 
@@ -253,7 +252,7 @@ func (hc *HealthChecker) checkDatabase(ctx context.Context) interface{} {
 	}
 
 	// Determine failure reason for final status
-	if errors.Is(lastErr, context.DeadlineExceeded) {
+	if lastErr == context.DeadlineExceeded {
 		return DependencyHealth{
 			Status:  StatusDegraded,
 			Message: "database connection timeout - may be overloaded or network issue",
@@ -261,7 +260,7 @@ func (hc *HealthChecker) checkDatabase(ctx context.Context) interface{} {
 		}
 	}
 
-	if errors.Is(lastErr, sql.ErrConnDone) {
+	if lastErr == sql.ErrConnDone {
 		return DependencyHealth{
 			Status:  StatusUnhealthy,
 			Message: "database connection closed unexpectedly",
@@ -303,7 +302,7 @@ func (hc *HealthChecker) checkOutbox(ctx context.Context) interface{} {
 		}
 	}
 
-	if ctx.Err() != nil && errors.Is(ctx.Err(), context.DeadlineExceeded) {
+	if ctx.Err() == context.DeadlineExceeded {
 		return DependencyHealth{
 			Status:  StatusDegraded,
 			Message: "outbox health check timeout",

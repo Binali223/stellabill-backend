@@ -12,14 +12,14 @@ const (
 type Permission string
 
 const (
-	PermReadPlans          Permission = "read:plans"
-	PermReadSubscriptions  Permission = "read:subscriptions"
-	PermManagePlans        Permission = "manage:plans"
-	PermManageSubscriptions Permission = "manage:subscriptions"
-	PermReadStatements     Permission = "read:statements"
-	PermManageStatements       Permission = "manage:statements"
-	PermManageReconciliation   Permission = "manage:reconciliation"
-	PermReadReconciliation     Permission = "read:reconciliation"
+	PermReadPlans            Permission = "read:plans"
+	PermReadSubscriptions    Permission = "read:subscriptions"
+	PermManagePlans          Permission = "manage:plans"
+	PermManageSubscriptions  Permission = "manage:subscriptions"
+	PermReadStatements       Permission = "read:statements"
+	PermManageStatements     Permission = "manage:statements"
+	PermManageReconciliation Permission = "manage:reconciliation"
+	PermReadReconciliation   Permission = "read:reconciliation"
 )
 
 var rolePermissions = map[Role][]Permission{

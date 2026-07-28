@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"stellarbill-backend/internal/migrations"
 	"sync"
 	"testing"
 	"time"
@@ -17,8 +18,6 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
-
-	"stellarbill-backend/internal/migrations"
 )
 
 func setupTestPostgres(t *testing.T) (*pgxpool.Pool, func()) {
@@ -283,4 +282,3 @@ func TestPostgresIdempotencyStore_DeleteExpiredBatch_Concurrency(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, int64(0), pending)
 }
-

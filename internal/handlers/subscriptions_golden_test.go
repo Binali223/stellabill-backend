@@ -3,12 +3,12 @@ package handlers
 import (
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/testutil/golden"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"stellarbill-backend/internal/testutil/golden"
 )
 
 func TestListSubscriptions_Golden(t *testing.T) {

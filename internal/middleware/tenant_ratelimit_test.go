@@ -15,10 +15,10 @@ func TestTenantRateLimiter_Allow(t *testing.T) {
 	defer limiter.Stop()
 
 	tests := []struct {
-		name      string
-		tenantID  string
-		requests  int
-		expected  int // allowed requests
+		name     string
+		tenantID string
+		requests int
+		expected int // allowed requests
 	}{
 		{
 			name:     "allow requests within limit",
@@ -61,7 +61,7 @@ func TestTenantRateLimiter_Sharding(t *testing.T) {
 
 	// Test that different tenant IDs hash to different shards
 	tenants := []string{"tenant-1", "tenant-2", "tenant-3", "tenant-4", "tenant-5"}
-	
+
 	for _, tenant := range tenants {
 		limiter.Allow(tenant)
 	}
@@ -296,10 +296,10 @@ func TestTenantRateLimitMiddleware_TwoTenants(t *testing.T) {
 
 func TestTenantRateLimiter_Stop(t *testing.T) {
 	limiter := NewTenantRateLimiter(5, 10)
-	
+
 	// Should not panic
 	limiter.Stop()
-	
+
 	// Calling stop again should not panic
 	limiter.Stop()
 }

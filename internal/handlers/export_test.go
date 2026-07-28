@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/repository"
+	"stellarbill-backend/internal/service"
+	"stellarbill-backend/internal/storage/s3"
 	"strings"
 	"testing"
 	"time"
@@ -15,10 +18,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"stellarbill-backend/internal/repository"
-	"stellarbill-backend/internal/service"
-	"stellarbill-backend/internal/storage/s3"
 )
 
 // ---------------------------------------------------------------------------
@@ -34,9 +33,11 @@ type exportMockSvc struct {
 func (m *exportMockSvc) GetDetail(_ context.Context, _ string, _ []string, _ string) (*service.StatementDetail, []string, error) {
 	return nil, nil, nil
 }
+
 func (m *exportMockSvc) ListByCustomer(_ context.Context, _ string, _ []string, _ string, _ repository.StatementQuery) (*service.ListStatementsDetail, int, []string, error) {
 	return nil, 0, nil, nil
 }
+
 func (m *exportMockSvc) ExportStatements(_ context.Context, _ string, _ []string, _, _ string, _ s3.S3Uploader) (*service.ExportResult, error) {
 	return m.exportResult, m.exportErr
 }
@@ -52,6 +53,7 @@ func (m *mockUploader) PutObject(_ context.Context, _ string, _ []byte, _ string
 	m.putCalls++
 	return m.putErr
 }
+
 func (m *mockUploader) PresignURL(_ context.Context, key string, ttl time.Duration) (s3.PresignedURL, error) {
 	if m.presignErr != nil {
 		return s3.PresignedURL{}, m.presignErr

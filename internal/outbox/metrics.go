@@ -3,7 +3,7 @@ package outbox
 import "github.com/prometheus/client_golang/prometheus"
 
 var (
-	OutboxPublisherLag          *prometheus.GaugeVec
+	OutboxPublisherLag            *prometheus.GaugeVec
 	ChaosOutboxCancellationsTotal prometheus.Counter
 )
 

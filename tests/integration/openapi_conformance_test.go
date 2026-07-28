@@ -9,6 +9,10 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"stellarbill-backend/internal/config"
+	"stellarbill-backend/internal/routes"
+	"stellarbill-backend/internal/testutil"
+	"stellarbill-backend/openapi"
 	"strings"
 	"testing"
 
@@ -18,10 +22,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"stellarbill-backend/internal/config"
-	"stellarbill-backend/internal/routes"
-	"stellarbill-backend/internal/testutil"
-	"stellarbill-backend/openapi"
 )
 
 // TestOpenAPIConformance validates that handler responses conform to the OpenAPI schema.
@@ -89,7 +89,7 @@ func testListPlansConformance(t *testing.T, router *gin.Engine, spec *openapi3.T
 
 		// Validate required fields per PlansResponse schema
 		assert.Contains(t, respBody, "plans", "response must contain 'plans' field")
-		
+
 		plansField, ok := respBody["plans"].([]interface{})
 		assert.True(t, ok, "plans field must be an array")
 

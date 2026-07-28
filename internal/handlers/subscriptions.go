@@ -1,43 +1,34 @@
 package handlers
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"stellarbill-backend/internal/pagination"
+	"stellarbill-backend/internal/service"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"stellarbill-backend/internal/pagination"
-	"stellarbill-backend/internal/service"
 )
+
 // SSE for Issue #357: Server-Sent Events for live subscription status
 // - Fan-out hub + heartbeats every 15s
 // - Graceful shutdown on context done
 // - Ready for outbox dispatcher integration
-// Subscription represents an API response subscription object.
 type Subscription struct {
-	ID          string    `json:"id"`
-	PlanID      string    `json:"plan_id"`
-	Customer    string    `json:"customer"`
-	Status      string    `json:"status"`
-	Amount      string    `json:"amount"`
-	Interval    string    `json:"interval"`
-	NextBilling string    `json:"next_billing,omitempty"`
-	UpdatedAt   time.Time `json:"-"`
-	Version     int64     `json:"-"`
-	ETag        string    `json:"etag"`
+	ID          string `json:"id"`
+	PlanID      string `json:"plan_id"`
+	Customer    string `json:"customer"`
+	Status      string `json:"status"`
+	Amount      string `json:"amount"`
+	Interval    string `json:"interval"`
+	NextBilling string `json:"next_billing,omitempty"`
 }
 
-// GetID returns the subscription identifier.
 func (s Subscription) GetID() string        { return s.ID }
-
-// GetSortValue returns the customer identifier used for pagination cursor ordering.
 func (s Subscription) GetSortValue() string { return s.Customer } // Sort by customer for now
 
-// ListSubscriptions handles requests for listing all subscriptions.
 func (h *Handler) ListSubscriptions(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", "10")
 	limit, _ := strconv.Atoi(limitStr)
@@ -67,7 +58,6 @@ func (h *Handler) ListSubscriptions(c *gin.Context) {
 	})
 }
 
-// GetSubscription handles requests for retrieving a single subscription by ID.
 func (h *Handler) GetSubscription(c *gin.Context) {
 	id := c.Param("id")
 	sub, err := h.Subscriptions.GetSubscription(c, id)
@@ -75,55 +65,7 @@ func (h *Handler) GetSubscription(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 		return
 	}
-	
-	etag := GenerateETag(sub.UpdatedAt, sub.Version)
-	c.Header("ETag", etag)
-	
 	c.JSON(http.StatusOK, sub)
-}
-
-func (h *Handler) PatchSubscription(c *gin.Context) {
-	id := c.Param("id")
-	expectedVersion, err := EnsureIfMatch(c)
-	if err != nil {
-		return
-	}
-
-	var req Subscription
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	if err := h.Subscriptions.PatchSubscription(c, id, &req, expectedVersion); err != nil {
-		if err.Error() == "concurrent update" {
-			c.JSON(http.StatusPreconditionFailed, gin.H{"error": "precondition failed"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"status": "updated"})
-}
-
-func (h *Handler) DeleteSubscription(c *gin.Context) {
-	id := c.Param("id")
-	expectedVersion, err := EnsureIfMatch(c)
-	if err != nil {
-		return
-	}
-
-	if err := h.Subscriptions.DeleteSubscription(c, id, expectedVersion); err != nil {
-		if err.Error() == "concurrent update" {
-			c.JSON(http.StatusPreconditionFailed, gin.H{"error": "precondition failed"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.Status(http.StatusNoContent)
 }
 
 // NewGetSubscriptionHandler returns a gin.HandlerFunc that retrieves a full
@@ -131,82 +73,6 @@ func (h *Handler) DeleteSubscription(c *gin.Context) {
 func NewGetSubscriptionHandler(svc service.SubscriptionService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"id": c.Param("id")})
-	}
-}
-
-// NewChangeSubscriptionStatusHandler updates a single subscription status.
-func NewChangeSubscriptionStatusHandler(svc service.SubscriptionService) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var payload struct {
-			Status string `json:"status"`
-		}
-		if err := c.ShouldBindJSON(&payload); err != nil {
-			RespondWithError(c, http.StatusBadRequest, ErrorCodeValidationFailed, "invalid request body")
-			return
-		}
-
-		status := strings.TrimSpace(payload.Status)
-		if status == "" {
-			RespondWithError(c, http.StatusUnprocessableEntity, ErrorCodeValidationFailed, "status is required")
-			return
-		}
-
-		tenantID := c.GetString("tenantID")
-		if tenantID == "" {
-			RespondWithAuthError(c, "missing tenant context")
-			return
-		}
-
-		change, err := svc.ChangeStatus(c.Request.Context(), tenantID, c.GetString("callerID"), c.Param("id"), status)
-		if err != nil {
-			statusCode, code, message := MapServiceErrorToResponse(err)
-			if errors.Is(err, service.ErrInvalidStatus) || errors.Is(err, service.ErrInvalidTransition) || errors.Is(err, service.ErrUnknownCurrentState) {
-				statusCode = http.StatusConflict
-				code = ErrorCodeConflict
-				if errors.Is(err, service.ErrInvalidStatus) {
-					statusCode = http.StatusUnprocessableEntity
-					code = ErrorCodeValidationFailed
-				}
-			}
-			RespondWithError(c, statusCode, code, message)
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"api_version": "v1", "data": change})
-	}
-}
-
-// NewBatchSubscriptionHandler accepts a batch of subscription status updates and returns
-// per-item status codes in a 207 Multi-Status response.
-func NewBatchSubscriptionHandler(svc service.SubscriptionService) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var req service.BatchSubscriptionRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
-			RespondWithError(c, http.StatusBadRequest, ErrorCodeValidationFailed, "invalid request body")
-			return
-		}
-
-		results, err := svc.ProcessBatch(c.Request.Context(), c.GetString("tenantID"), c.GetString("callerID"), req.Operations)
-		if err != nil {
-			RespondWithError(c, http.StatusBadRequest, ErrorCodeValidationFailed, err.Error())
-			return
-		}
-
-		response := service.BatchSubscriptionResponse{Results: results}
-		statusCode := http.StatusOK
-		if len(results) > 0 {
-			for _, result := range results {
-				if result.StatusCode >= http.StatusBadRequest {
-					statusCode = http.StatusMultiStatus
-					break
-				}
-			}
-		}
-		if statusCode == http.StatusMultiStatus {
-			c.JSON(statusCode, response)
-			return
-		}
-		c.JSON(statusCode, response)
 	}
 }
 

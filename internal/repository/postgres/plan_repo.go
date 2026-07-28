@@ -3,12 +3,11 @@ package postgres
 import (
 	"context"
 	"errors"
+	"stellarbill-backend/internal/metrics"
+	"stellarbill-backend/internal/repository"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-
-	"stellarbill-backend/internal/metrics"
-	"stellarbill-backend/internal/repository"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"

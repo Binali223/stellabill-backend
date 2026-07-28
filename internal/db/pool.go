@@ -3,9 +3,8 @@ package db
 import (
 	"context"
 	"fmt"
-	"time"
-
 	"stellarbill-backend/internal/config"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

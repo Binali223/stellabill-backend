@@ -97,7 +97,6 @@ func Idempotency(store IdempotencyStore) gin.HandlerFunc {
 		statusCode, responseBody, isReplay, isInFlight, err := store.GetOrInsert(
 			c.Request.Context(), scope, key, method, path, payloadHash, DefaultIdempotencyTTL,
 		)
-
 		if err != nil {
 			if errors.Is(err, ErrRequestMismatch) {
 				c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "Idempotency-Key reused with a different request"})

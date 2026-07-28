@@ -43,11 +43,11 @@ import (
 	"math"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/service"
 	"testing"
 	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
-	"stellarbill-backend/internal/service"
 )
 
 // ── Stub swap router ─────────────────────────────────────────────────────────
@@ -482,7 +482,7 @@ func FuzzSwapRawBody(f *testing.F) {
 	}
 
 	for _, s := range rawSeeds {
-		f.Add(s, true) // true = exact-in endpoint
+		f.Add(s, true)  // true = exact-in endpoint
 		f.Add(s, false) // false = exact-out endpoint
 	}
 

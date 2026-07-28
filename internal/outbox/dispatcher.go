@@ -6,10 +6,9 @@ import (
 	"log"
 	"math"
 	"sort"
+	"stellarbill-backend/internal/security"
 	"sync"
 	"time"
-
-	"stellarbill-backend/internal/security"
 )
 
 // DispatcherConfig holds configuration for the dispatcher

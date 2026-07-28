@@ -43,7 +43,7 @@ func (c *JWKSCache) GetKey(ctx context.Context, kid string) (jwk.Key, error) {
 	c.mu.RLock()
 	key, found := c.keys[kid]
 	isExpired := time.Now().After(c.expiry)
-	
+
 	// Check negative cache
 	negExpiry, inNegCache := c.negativeCache[kid]
 	isNegExpired := time.Now().After(negExpiry)
@@ -105,7 +105,7 @@ func (c *JWKSCache) refreshAndGetKey(ctx context.Context, kid string) (jwk.Key, 
 	c.keys = newKeys
 	c.expiry = time.Now().Add(c.ttl)
 	c.lastRefresh = time.Now()
-	
+
 	// Reset negative cache on successful refresh
 	c.negativeCache = make(map[string]time.Time)
 

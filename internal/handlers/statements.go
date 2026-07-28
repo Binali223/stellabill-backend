@@ -3,20 +3,20 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"stellarbill-backend/internal/repository"
+	"stellarbill-backend/internal/service"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
-
-	"stellarbill-backend/internal/jsonx"
-	"stellarbill-backend/internal/repository"
-	"stellarbill-backend/internal/service"
 )
 
 // ---------------- CONSTANTS ----------------
 
-const defaultLimit = 20
-const maxLimit = 200
+const (
+	defaultLimit = 20
+	maxLimit     = 200
+)
 
 // ---------------- LIST HANDLER ----------------
 
@@ -95,13 +95,10 @@ func NewListStatementsHandler(svc service.StatementService) gin.HandlerFunc {
 			statements = []*service.StatementDetail{}
 		}
 
-		// Use jsonx.GinRenderer (sonic on amd64/arm64 with -tags=sonic,
-		// encoding/json elsewhere) to reduce per-request serialisation CPU
-		// on this high-QPS list endpoint. See internal/jsonx for details.
-		c.Render(http.StatusOK, jsonx.GinRenderer{Data: gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"statements": statements,
 			"total":      total,
-		}})
+		})
 	}
 }
 

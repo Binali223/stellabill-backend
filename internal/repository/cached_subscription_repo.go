@@ -3,11 +3,10 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"stellarbill-backend/internal/cache"
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"stellarbill-backend/internal/cache"
 )
 
 // CachedSubscriptionRepo decorates a SubscriptionRepository with a read-through cache.
@@ -179,31 +178,13 @@ func (csr *CachedSubscriptionRepo) UpdateStatus(ctx context.Context, id string, 
 	if err := csr.backend.UpdateStatus(ctx, id, tenantID, status); err != nil {
 		return err
 	}
-	_ = csr.invalidate(ctx, id, tenantID)
+	_ = csr.Delete(ctx, id, tenantID)
 	return nil
 }
 
-// Update delegates to backend and invalidates cache.
-func (csr *CachedSubscriptionRepo) Update(ctx context.Context, sub *SubscriptionRow, expectedVersion int64) error {
-	if err := csr.backend.Update(ctx, sub, expectedVersion); err != nil {
-		return err
-	}
-	_ = csr.invalidate(ctx, sub.ID, sub.TenantID)
-	return nil
-}
-
-// Delete delegates to backend and invalidates cache.
-func (csr *CachedSubscriptionRepo) Delete(ctx context.Context, id string, tenantID string, expectedVersion int64) error {
-	if err := csr.backend.Delete(ctx, id, tenantID, expectedVersion); err != nil {
-		return err
-	}
-	_ = csr.invalidate(ctx, id, tenantID)
-	return nil
-}
-
-// invalidate removes cached entries for a subscription and records invalidation times.
+// Delete removes cached entries for a subscription and records invalidation times.
 // It clears both the by-id and by-id-and-tenant keys.
-func (csr *CachedSubscriptionRepo) invalidate(ctx context.Context, id string, tenantID string) error {
+func (csr *CachedSubscriptionRepo) Delete(ctx context.Context, id string, tenantID string) error {
 	if csr.cache == nil {
 		return nil
 	}

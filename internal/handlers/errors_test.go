@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/service"
 	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-
-	"stellarbill-backend/internal/service"
 )
 
 // mockErrorService returns different errors for testing
@@ -29,10 +28,6 @@ func (m *mockErrorService) GetDetail(_ context.Context, _, _, _ string) (*servic
 }
 
 func (m *mockErrorService) ChangeStatus(ctx context.Context, tenantID string, actorID string, subscriptionID string, targetStatus string) (*service.SubscriptionStatusChange, error) {
-	return nil, nil
-}
-
-func (m *mockErrorService) BatchChangeStatus(ctx context.Context, tenantID string, actorID string, operations []service.BatchSubscriptionOperation) ([]service.BatchSubscriptionResult, error) {
 	return nil, nil
 }
 

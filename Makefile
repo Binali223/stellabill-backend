@@ -1,5 +1,15 @@
 GOPATH := $(shell go env GOPATH)
 MUTEST := $(GOPATH)/bin/go-mutesting
+GOFUMPT := $(GOPATH)/bin/gofumpt
+
+# ── Formatting ───────────────────────────────────────────────────────────────
+
+.PHONY: fmt
+fmt: $(GOFUMPT)  ## Format code using gofumpt
+	$(GOFUMPT) -w .
+
+$(GOFUMPT):
+	go install mvdan.cc/gofumpt@latest
 
 # ── Docs / ADRs ───────────────────────────────────────────────────────────────
 

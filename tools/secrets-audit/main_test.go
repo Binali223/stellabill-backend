@@ -2,10 +2,9 @@ package main
 
 import (
 	"context"
+	"stellarbill-backend/internal/secrets"
 	"testing"
 	"time"
-
-	"stellarbill-backend/internal/secrets"
 
 	"github.com/stretchr/testify/require"
 )

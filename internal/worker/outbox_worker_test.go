@@ -292,7 +292,6 @@ func TestOutboxWorker_DeadLetterAfterMaxRetries(t *testing.T) {
 		WithArgs(OutboxStatusFailed, 3, publishErr.Error(), eventID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
-
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT").WillReturnRows(sqlmock.NewRows(outboxColumns()))
 	mock.ExpectRollback()
@@ -554,7 +553,6 @@ func TestOutboxWorker_MultipleBatchProcessing(t *testing.T) {
 }
 
 func TestOutboxWorker_SatisfiesOutboxHealtherInterface(t *testing.T) {
-
 	db, _, err := sqlmock.New()
 	require.NoError(t, err)
 	defer db.Close()
@@ -574,6 +572,8 @@ func TestOutboxWorker_SatisfiesOutboxHealtherInterface(t *testing.T) {
 // Compile-time interface assertion
 // ---------------------------------------------------------------------------
 
-var _ EventPublisher = (*mockPublisher)(nil)
-var _ EventPublisher = (*slowPublisher)(nil)
-var _ EventPublisher = (*failNTimesPublisher)(nil)
+var (
+	_ EventPublisher = (*mockPublisher)(nil)
+	_ EventPublisher = (*slowPublisher)(nil)
+	_ EventPublisher = (*failNTimesPublisher)(nil)
+)

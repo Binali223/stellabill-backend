@@ -10,12 +10,12 @@ var ErrInsufficientLiquidity = errors.New("insufficient liquidity")
 
 // SwapResult holds the output of a swap operation.
 type SwapResult struct {
-	TokenIn      string  `json:"token_in"`
-	TokenOut     string  `json:"token_out"`
-	AmountIn     float64 `json:"amount_in"`
-	AmountOut    float64 `json:"amount_out"`
-	PriceImpact  float64 `json:"price_impact"`
-	Fee          float64 `json:"fee"`
+	TokenIn     string  `json:"token_in"`
+	TokenOut    string  `json:"token_out"`
+	AmountIn    float64 `json:"amount_in"`
+	AmountOut   float64 `json:"amount_out"`
+	PriceImpact float64 `json:"price_impact"`
+	Fee         float64 `json:"fee"`
 }
 
 // SwapRouter defines the interface for token swap operations.

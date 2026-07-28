@@ -5,9 +5,9 @@ import "context"
 type contextKey string
 
 const (
-	callerIDKey  contextKey = "callerID"
-	tenantIDKey  contextKey = "tenantID"
-	rolesKey     contextKey = "roles"
+	callerIDKey contextKey = "callerID"
+	tenantIDKey contextKey = "tenantID"
+	rolesKey    contextKey = "roles"
 )
 
 // WithCallerContext injects callerID, tenantID, and roles into a context.

@@ -174,14 +174,14 @@ func NewMultiPublisher(publishers ...Publisher) Publisher {
 // Publish publishes to all publishers
 func (p *MultiPublisher) Publish(ctx context.Context, event *Event) error {
 	var lastError error
-	
+
 	for i, publisher := range p.publishers {
 		if err := publisher.Publish(ctx, event); err != nil {
 			lastError = fmt.Errorf("publisher %d failed: %w", i, err)
 			log.Printf("Publisher %d failed: %v", i, err)
 		}
 	}
-	
+
 	return lastError
 }
 

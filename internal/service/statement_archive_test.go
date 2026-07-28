@@ -2,11 +2,9 @@ package service_test
 
 import (
 	"context"
-	"errors"
-	"testing"
-
 	"stellarbill-backend/internal/repository"
 	"stellarbill-backend/internal/service"
+	"testing"
 )
 
 func TestStatementRehydration_ArchivedStatement(t *testing.T) {

@@ -7,13 +7,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"stellarbill-backend/internal/service"
 	"strconv"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"stellarbill-backend/internal/service"
 )
 
 // mockSubscriptionService is a test double for service.SubscriptionService.
@@ -32,10 +32,6 @@ func (m *mockSubscriptionService) GetDetail(_ context.Context, tenantID, callerI
 }
 
 func (m *mockSubscriptionService) ChangeStatus(ctx context.Context, tenantID string, actorID string, subscriptionID string, targetStatus string) (*service.SubscriptionStatusChange, error) {
-	return nil, nil
-}
-
-func (m *mockSubscriptionService) BatchChangeStatus(ctx context.Context, tenantID string, actorID string, operations []service.BatchSubscriptionOperation) ([]service.BatchSubscriptionResult, error) {
 	return nil, nil
 }
 

@@ -6,16 +6,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"stellarbill-backend/internal/audit"
+	"stellarbill-backend/internal/repository"
+	"stellarbill-backend/internal/service"
+	"stellarbill-backend/internal/storage/s3"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"stellarbill-backend/internal/audit"
-	"stellarbill-backend/internal/repository"
-	"stellarbill-backend/internal/service"
-	"stellarbill-backend/internal/storage/s3"
 )
 
 type mockExportPlanRepo struct {
@@ -26,6 +25,7 @@ type mockExportPlanRepo struct {
 func (m *mockExportPlanRepo) FindByID(_ context.Context, _ string) (*repository.PlanRow, error) {
 	return nil, nil
 }
+
 func (m *mockExportPlanRepo) List(_ context.Context) ([]*repository.PlanRow, error) {
 	return m.plans, m.err
 }
@@ -38,12 +38,15 @@ type mockExportSubRepo struct {
 func (m *mockExportSubRepo) FindByID(_ context.Context, _ string) (*repository.SubscriptionRow, error) {
 	return nil, nil
 }
+
 func (m *mockExportSubRepo) FindByIDAndTenant(_ context.Context, _, _ string) (*repository.SubscriptionRow, error) {
 	return nil, nil
 }
+
 func (m *mockExportSubRepo) UpdateStatus(_ context.Context, _, _, _ string) error {
 	return nil
 }
+
 func (m *mockExportSubRepo) ListByTenant(_ context.Context, _ string) ([]*repository.SubscriptionRow, error) {
 	return m.subs, m.err
 }
@@ -56,32 +59,35 @@ type mockExportStmtRepo struct {
 func (m *mockExportStmtRepo) FindByID(_ context.Context, _ string) (*repository.StatementRow, error) {
 	return nil, nil
 }
+
 func (m *mockExportStmtRepo) Create(_ context.Context, _ *repository.StatementRow) error {
 	return nil
 }
+
 func (m *mockExportStmtRepo) ListByCustomerID(_ context.Context, _ string, _ repository.StatementQuery) ([]*repository.StatementRow, int, error) {
 	return m.rows, len(m.rows), m.err
 }
+
 func (m *mockExportStmtRepo) UpdateArchivedData(_ context.Context, _ string, _ *repository.StatementRow) error {
 	return nil
 }
 
 type mockExportUploader struct {
-	putErr        error
-	presignErr    error
-	putCalls      int
-	putDelay      time.Duration
-	putCheckCtx   bool
+	putErr      error
+	presignErr  error
+	putCalls    int
+	putDelay    time.Duration
+	putCheckCtx bool
 }
 
 func (m *mockExportUploader) PutObject(ctx context.Context, _ string, _ []byte, _ string) error {
 	if m.putCheckCtx {
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				default:
-				}
-			}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+	}
 	if m.putDelay > 0 {
 		select {
 		case <-ctx.Done():
@@ -92,6 +98,7 @@ func (m *mockExportUploader) PutObject(ctx context.Context, _ string, _ []byte, 
 	m.putCalls++
 	return m.putErr
 }
+
 func (m *mockExportUploader) PresignURL(_ context.Context, key string, ttl time.Duration) (s3.PresignedURL, error) {
 	if m.presignErr != nil {
 		return s3.PresignedURL{}, m.presignErr

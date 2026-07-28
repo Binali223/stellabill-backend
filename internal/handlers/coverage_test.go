@@ -1,14 +1,13 @@
 package handlers
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/service"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"stellarbill-backend/internal/service"
 )
 
 func TestCoverage_NewHandlerWithDependencies(t *testing.T) {
@@ -131,11 +130,9 @@ type stubSubSvc struct{}
 func (stubSubSvc) ListSubscriptions(c *gin.Context) ([]Subscription, error) {
 	return []Subscription{{ID: "s1"}}, nil
 }
+
 func (stubSubSvc) GetSubscription(c *gin.Context, id string) (*Subscription, error) {
 	return &Subscription{ID: id}, nil
-}
-func (stubSubSvc) BatchChangeStatus(ctx context.Context, tenantID string, actorID string, operations []service.BatchSubscriptionOperation) ([]service.BatchSubscriptionResult, error) {
-	return nil, nil
 }
 
 func TestCoverage_HandlerListAndGetSubscriptions(t *testing.T) {
@@ -170,6 +167,7 @@ type errSubSvc struct{}
 func (errSubSvc) ListSubscriptions(c *gin.Context) ([]Subscription, error) {
 	return nil, errors.New("svc failure")
 }
+
 func (errSubSvc) GetSubscription(c *gin.Context, id string) (*Subscription, error) {
 	return nil, errors.New("svc failure")
 }

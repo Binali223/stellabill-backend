@@ -44,7 +44,7 @@ func TestWebhookVerificationMiddleware_Generic(t *testing.T) {
 			setupRequest: func() (*httptest.ResponseRecorder, *http.Request) {
 				body := []byte(`{"event":"test","data":"payload"}`)
 				sig := generateSignature(body, secret, HMACSHA256)
-				
+
 				r := httptest.NewRecorder()
 				req := httptest.NewRequest("POST", "/webhook", strings.NewReader(string(body)))
 				req.Header.Set(cfg.SignatureHeader, cfg.SignatureVersion+sig)
@@ -147,22 +147,22 @@ func TestWebhookVerificationMiddleware_Generic(t *testing.T) {
 				body := []byte(`{"event":"test"}`)
 				sig := generateSignature(body, secret, HMACSHA256)
 				eventID := uuid.New().String()
-				
+
 				// First request should succeed
 				r1 := httptest.NewRecorder()
 				req1 := httptest.NewRequest("POST", "/webhook", strings.NewReader(string(body)))
 				req1.Header.Set(cfg.SignatureHeader, cfg.SignatureVersion+sig)
 				req1.Header.Set(cfg.TimestampHeader, fmt.Sprintf("%d", time.Now().Unix()))
 				req1.Header.Set(cfg.EventIDHeader, eventID)
-				
+
 				router1 := gin.New()
 				router1.POST("/webhook", middleware, func(c *gin.Context) {
 					c.Status(http.StatusOK)
 				})
 				router1.ServeHTTP(r1, req1)
-				
+
 				assert.Equal(t, http.StatusOK, r1.Code)
-				
+
 				// Second request with same event ID should fail
 				r2 := httptest.NewRecorder()
 				req2 := httptest.NewRequest("POST", "/webhook", strings.NewReader(string(body)))
@@ -181,7 +181,7 @@ func TestWebhookVerificationMiddleware_Generic(t *testing.T) {
 				largeBody := make([]byte, cfg.MaxBodySize+1)
 				rand.Read(largeBody)
 				sig := generateSignature(largeBody, secret, HMACSHA256)
-				
+
 				r := httptest.NewRecorder()
 				req := httptest.NewRequest("POST", "/webhook", strings.NewReader(string(largeBody)))
 				req.Header.Set(cfg.SignatureHeader, cfg.SignatureVersion+sig)
@@ -199,22 +199,22 @@ func TestWebhookVerificationMiddleware_Generic(t *testing.T) {
 				cfg2 := DefaultWebhookConfig()
 				cfg2.SecretKey = secret
 				cfg2.Algorithm = HMACSHA512
-				
+
 				middleware2, _ := WebhookVerificationMiddleware(cfg2)
 				sig := generateSignature(body, secret, HMACSHA512)
-				
+
 				r := httptest.NewRecorder()
 				req := httptest.NewRequest("POST", "/webhook", strings.NewReader(string(body)))
 				req.Header.Set(cfg2.SignatureHeader, cfg2.SignatureVersion+sig)
 				req.Header.Set(cfg2.TimestampHeader, fmt.Sprintf("%d", time.Now().Unix()))
 				req.Header.Set(cfg2.EventIDHeader, uuid.New().String())
-				
+
 				router := gin.New()
 				router.POST("/webhook", middleware2, func(c *gin.Context) {
 					c.Status(http.StatusOK)
 				})
 				router.ServeHTTP(r, req)
-				
+
 				return r, req
 			},
 			expectedStatus: http.StatusOK,
@@ -227,26 +227,26 @@ func TestWebhookVerificationMiddleware_Generic(t *testing.T) {
 				t.Skip("Test skipped")
 				return
 			}
-			
+
 			r, req := tt.setupRequest()
-			
+
 			if req == nil {
 				return // Already tested in first request of replay attack
 			}
-			
+
 			router := gin.New()
 			router.POST("/webhook", middleware, func(c *gin.Context) {
 				c.Status(http.StatusOK)
 			})
-			
+
 			router.ServeHTTP(r, req)
-			
+
 			assert.Equal(t, tt.expectedStatus, r.Code)
-			
+
 			if tt.expectedError != "" {
 				assert.Contains(t, r.Body.String(), tt.expectedError)
 			}
-			
+
 			if tt.expectedStatus == http.StatusOK {
 				assert.Equal(t, true, getVerifiedStatus(r, req))
 			}
@@ -258,28 +258,28 @@ func TestWebhookVerificationMiddleware_ProviderSpecific(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
-		name       string
-		provider   WebhookProvider
-		setupFunc  func(*WebhookConfig) (*httptest.ResponseRecorder, *http.Request)
+		name      string
+		provider  WebhookProvider
+		setupFunc func(*WebhookConfig) (*httptest.ResponseRecorder, *http.Request)
 	}{
 		{
 			name:     "stripe_provider",
 			provider: ProviderStripe,
 			setupFunc: func(cfg *WebhookConfig) (*httptest.ResponseRecorder, *http.Request) {
 				body := []byte(`{"id":"evt_123","type":"payment_intent.created"}`)
-				
+
 				// Stripe uses composite signature: t=timestamp,v1=signature
 				secret := cfg.SecretKey
 				timestamp := fmt.Sprintf("%d", time.Now().Unix())
 				signedPayload := timestamp + "." + string(body)
 				sig := generateSignature([]byte(signedPayload), secret, HMACSHA256)
-				
+
 				r := httptest.NewRecorder()
 				req := httptest.NewRequest("POST", "/webhook", strings.NewReader(string(body)))
 				req.Header.Set(cfg.SignatureHeader, "t="+timestamp+",v1="+sig)
 				req.Header.Set(cfg.TimestampHeader, timestamp)
 				req.Header.Set(cfg.EventIDHeader, uuid.New().String())
-				
+
 				return r, req
 			},
 		},
@@ -289,12 +289,12 @@ func TestWebhookVerificationMiddleware_ProviderSpecific(t *testing.T) {
 			setupFunc: func(cfg *WebhookConfig) (*httptest.ResponseRecorder, *http.Request) {
 				body := []byte(`{"action":"created"}`)
 				sig := generateSignature(body, cfg.SecretKey, HMACSHA256)
-				
+
 				r := httptest.NewRecorder()
 				req := httptest.NewRequest("POST", "/webhook", strings.NewReader(string(body)))
 				req.Header.Set(cfg.SignatureHeader, cfg.SignatureVersion+sig)
 				req.Header.Set(cfg.EventIDHeader, uuid.New().String())
-				
+
 				return r, req
 			},
 		},
@@ -304,13 +304,13 @@ func TestWebhookVerificationMiddleware_ProviderSpecific(t *testing.T) {
 			setupFunc: func(cfg *WebhookConfig) (*httptest.ResponseRecorder, *http.Request) {
 				body := []byte(`{"merchant_id":"M123","type":"payment.created"}`)
 				sig := generateSignature(body, cfg.SecretKey, HMACSHA256)
-				
+
 				r := httptest.NewRecorder()
 				req := httptest.NewRequest("POST", "/webhook", strings.NewReader(string(body)))
 				req.Header.Set(cfg.SignatureHeader, sig)
 				req.Header.Set(cfg.TimestampHeader, fmt.Sprintf("%d", time.Now().Unix()))
 				req.Header.Set(cfg.EventIDHeader, uuid.New().String())
-				
+
 				return r, req
 			},
 		},
@@ -320,13 +320,13 @@ func TestWebhookVerificationMiddleware_ProviderSpecific(t *testing.T) {
 			setupFunc: func(cfg *WebhookConfig) (*httptest.ResponseRecorder, *http.Request) {
 				body := []byte(`{"event_type":"PAYMENT.CAPTURE.COMPLETED"}`)
 				sig := generateSignature(body, cfg.SecretKey, HMACSHA256)
-				
+
 				r := httptest.NewRecorder()
 				req := httptest.NewRequest("POST", "/webhook", strings.NewReader(string(body)))
 				req.Header.Set(cfg.SignatureHeader, sig)
 				req.Header.Set(cfg.TimestampHeader, fmt.Sprintf("%d", time.Now().Unix()))
 				req.Header.Set(cfg.EventIDHeader, uuid.New().String())
-				
+
 				return r, req
 			},
 		},
@@ -335,7 +335,7 @@ func TestWebhookVerificationMiddleware_ProviderSpecific(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := ProviderConfig(tt.provider)
-			
+
 			// Set a test secret
 			switch tt.provider {
 			case ProviderStripe:
@@ -347,17 +347,17 @@ func TestWebhookVerificationMiddleware_ProviderSpecific(t *testing.T) {
 			case ProviderPayPal:
 				cfg.SecretKey = "paypal_webhook_secret_123"
 			}
-			
+
 			middleware, err := WebhookVerificationMiddleware(cfg)
 			require.NoError(t, err)
-			
+
 			r, req := tt.setupFunc(cfg)
-			
+
 			router := gin.New()
 			router.POST("/webhook", middleware, func(c *gin.Context) {
 				c.JSON(http.StatusOK, gin.H{"status": "verified"})
 			})
-			
+
 			router.ServeHTTP(r, req)
 			if r.Code != http.StatusOK {
 				t.Logf("webhook verification failed. Response body: %s", r.Body.String())
@@ -413,9 +413,9 @@ func TestWebhookVerificationMiddleware_ConfigValidation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := DefaultWebhookConfig()
 			tt.modifyCfg(cfg)
-			
+
 			middleware, err := WebhookVerificationMiddleware(cfg)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				assert.Nil(t, middleware)
@@ -470,9 +470,9 @@ func TestWebhookVerificationMiddleware_DisabledFeatures(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
-		name        string
-		modifyCfg   func(*WebhookConfig)
-		setupReq    func(*WebhookConfig) (*httptest.ResponseRecorder, *http.Request)
+		name      string
+		modifyCfg func(*WebhookConfig)
+		setupReq  func(*WebhookConfig) (*httptest.ResponseRecorder, *http.Request)
 	}{
 		{
 			name: "no_timestamp_required",
@@ -483,7 +483,7 @@ func TestWebhookVerificationMiddleware_DisabledFeatures(t *testing.T) {
 			setupReq: func(cfg *WebhookConfig) (*httptest.ResponseRecorder, *http.Request) {
 				body := []byte(`{"event":"test"}`)
 				sig := generateSignature(body, cfg.SecretKey, HMACSHA256)
-				
+
 				r := httptest.NewRecorder()
 				req := httptest.NewRequest("POST", "/webhook", strings.NewReader(string(body)))
 				req.Header.Set(cfg.SignatureHeader, cfg.SignatureVersion+sig)
@@ -501,7 +501,7 @@ func TestWebhookVerificationMiddleware_DisabledFeatures(t *testing.T) {
 			setupReq: func(cfg *WebhookConfig) (*httptest.ResponseRecorder, *http.Request) {
 				body := []byte(`{"event":"test"}`)
 				sig := generateSignature(body, cfg.SecretKey, HMACSHA256)
-				
+
 				r := httptest.NewRecorder()
 				req := httptest.NewRequest("POST", "/webhook", strings.NewReader(string(body)))
 				req.Header.Set(cfg.SignatureHeader, cfg.SignatureVersion+sig)
@@ -519,7 +519,7 @@ func TestWebhookVerificationMiddleware_DisabledFeatures(t *testing.T) {
 				body := []byte(`{"event":"test"}`)
 				sig := generateSignature(body, cfg.SecretKey, HMACSHA256)
 				eventID := uuid.New().String()
-				
+
 				r := httptest.NewRecorder()
 				req := httptest.NewRequest("POST", "/webhook", strings.NewReader(string(body)))
 				req.Header.Set(cfg.SignatureHeader, cfg.SignatureVersion+sig)
@@ -534,17 +534,17 @@ func TestWebhookVerificationMiddleware_DisabledFeatures(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := DefaultWebhookConfig()
 			tt.modifyCfg(cfg)
-			
+
 			middleware, err := WebhookVerificationMiddleware(cfg)
 			require.NoError(t, err)
-			
+
 			r, req := tt.setupReq(cfg)
-			
+
 			router := gin.New()
 			router.POST("/webhook", middleware, func(c *gin.Context) {
 				c.Status(http.StatusOK)
 			})
-			
+
 			router.ServeHTTP(r, req)
 			assert.Equal(t, http.StatusOK, r.Code)
 		})
@@ -685,5 +685,3 @@ func getVerifiedStatus(r *httptest.ResponseRecorder, req *http.Request) bool {
 	// Check if response contains verified status
 	return r.Code == http.StatusOK
 }
-
-

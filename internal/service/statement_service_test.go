@@ -3,11 +3,10 @@ package service_test
 import (
 	"context"
 	"errors"
-	"testing"
-	"time"
-
 	"stellarbill-backend/internal/repository"
 	"stellarbill-backend/internal/service"
+	"testing"
+	"time"
 )
 
 func seedStatements() []*repository.StatementRow {
@@ -105,7 +104,7 @@ func TestStatementGetDetail_NotFound(t *testing.T) {
 	svc := newStatementService() // empty repo
 
 	_, _, err := svc.GetDetail(context.Background(), "cust-1", []string{"customer"}, "stmt-missing")
-	if !errors.Is(err, service.ErrNotFound) {
+	if err != service.ErrNotFound {
 		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }
@@ -128,7 +127,7 @@ func TestStatementGetDetail_SoftDeleted(t *testing.T) {
 	svc := newStatementService(row)
 
 	_, _, err := svc.GetDetail(context.Background(), "cust-1", []string{"customer"}, "stmt-del")
-	if !errors.Is(err, service.ErrDeleted) {
+	if err != service.ErrDeleted {
 		t.Errorf("expected ErrDeleted, got %v", err)
 	}
 }
@@ -138,7 +137,7 @@ func TestStatementGetDetail_WrongCaller(t *testing.T) {
 	svc := newStatementService(rows...)
 
 	_, _, err := svc.GetDetail(context.Background(), "cust-other", []string{"customer"}, "stmt-1")
-	if !errors.Is(err, service.ErrForbidden) {
+	if err != service.ErrForbidden {
 		t.Errorf("expected ErrForbidden, got %v", err)
 	}
 }
@@ -169,7 +168,7 @@ func TestStatementListByCustomer_WrongCaller(t *testing.T) {
 
 	q := repository.StatementQuery{Limit: 10}
 	_, _, _, err := svc.ListByCustomer(context.Background(), "cust-other", []string{"customer"}, "cust-1", q)
-	if !errors.Is(err, service.ErrForbidden) {
+	if err != service.ErrForbidden {
 		t.Errorf("expected ErrForbidden, got %v", err)
 	}
 }
@@ -347,7 +346,6 @@ func TestStatementListByCustomer_LargeSet(t *testing.T) {
 	}
 }
 
-
 func TestStatementListByCustomer_MerchantAccess(t *testing.T) {
 	rows := seedStatements()
 	svc := newStatementService(rows...)
@@ -398,4 +396,3 @@ func TestStatementGetDetail_GeneralError(t *testing.T) {
 		t.Errorf("expected generic error, got %v", err)
 	}
 }
-

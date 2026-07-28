@@ -3,10 +3,9 @@ package handlers
 import (
 	"net/http"
 	"net/http/httptest"
-	"testing"
-
 	"stellarbill-backend/internal/service"
 	"stellarbill-backend/internal/testutil/golden"
+	"testing"
 )
 
 func TestListStatements_Golden(t *testing.T) {

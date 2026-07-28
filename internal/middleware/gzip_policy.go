@@ -41,18 +41,18 @@ func GzipPolicy(cfg GzipPolicyConfig) gin.HandlerFunc {
 			return
 		}
 
-compressedLen := int64(len(body))
+		compressedLen := int64(len(body))
 
-	if cfg.MaxUncompressedBytes > 0 && compressedLen > cfg.MaxUncompressedBytes {
-		c.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{
-			"error":           "request_too_large",
-			"compressed_size": compressedLen,
-			"max_compressed":  cfg.MaxUncompressedBytes,
-		})
-		return
-	}
+		if cfg.MaxUncompressedBytes > 0 && compressedLen > cfg.MaxUncompressedBytes {
+			c.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{
+				"error":           "request_too_large",
+				"compressed_size": compressedLen,
+				"max_compressed":  cfg.MaxUncompressedBytes,
+			})
+			return
+		}
 
-	zr, err := gzip.NewReader(bytes.NewReader(body))
+		zr, err := gzip.NewReader(bytes.NewReader(body))
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 				"error": "invalid_gzip",
@@ -86,11 +86,11 @@ compressedLen := int64(len(body))
 
 		if maxDestSize > 0 && int64(decompressed.Len()) > maxDestSize {
 			c.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{
-				"error":                "decompression_bomb",
-				"decompressed_size":    decompressed.Len(),
-				"max_uncompressed":     maxDestSize,
-				"compressed_size":      compressedLen,
-				"compression_ratio":   float64(decompressed.Len()) / float64(max(1, int(compressedLen))),
+				"error":             "decompression_bomb",
+				"decompressed_size": decompressed.Len(),
+				"max_uncompressed":  maxDestSize,
+				"compressed_size":   compressedLen,
+				"compression_ratio": float64(decompressed.Len()) / float64(max(1, int(compressedLen))),
 			})
 			return
 		}
@@ -100,4 +100,3 @@ compressedLen := int64(len(body))
 		c.Next()
 	}
 }
-

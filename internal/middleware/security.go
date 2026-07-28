@@ -2,8 +2,9 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"stellarbill-backend/internal/config"
+
+	"github.com/gin-gonic/gin"
 )
 
 // SecurityHeaders applies baseline HTTP security headers.

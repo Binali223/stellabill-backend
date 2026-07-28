@@ -6,13 +6,11 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/repository"
+	"stellarbill-backend/internal/service"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-
-	"stellarbill-backend/internal/repository"
-	"stellarbill-backend/internal/service"
-	"stellarbill-backend/internal/storage/s3"
 )
 
 // ---------------------------------------------------------------------------
@@ -45,16 +43,6 @@ func (m *mockStatementService) GetDetail(
 	statementID string,
 ) (*service.StatementDetail, []string, error) {
 	return m.getResult, nil, m.getErr
-}
-
-func (m *mockStatementService) ExportStatements(
-	_ context.Context,
-	_ string,
-	_ []string,
-	_, _ string,
-	_ s3.S3Uploader,
-) (*service.ExportResult, error) {
-	return &service.ExportResult{ObjectKey: "stub", URL: "https://example.invalid/export"}, nil
 }
 
 // ---------------------------------------------------------------------------
