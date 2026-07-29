@@ -6,10 +6,9 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/logger"
 	"strings"
 	"testing"
-
-	"stellarbill-backend/internal/logger"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -300,12 +299,12 @@ func TestPlainTextNegotiation(t *testing.T) {
 // the pattern list have a fast unit-level regression check.
 func TestRedactSecretsUnit(t *testing.T) {
 	cases := map[string]string{
-		"Authorization: Bearer abc.def.ghi":  "[REDACTED]",
-		"password=hunter2":                   "[REDACTED]",
-		"api_key=ABC123":                     "[REDACTED]",
-		"token: 1234567890":                  "[REDACTED]",
-		"AKIAIOSFODNN7EXAMPLE":               "[REDACTED]",
-		"eyJhbGciOiJIUzI1NiJ9.payload.sig":   "[REDACTED]",
+		"Authorization: Bearer abc.def.ghi": "[REDACTED]",
+		"password=hunter2":                  "[REDACTED]",
+		"api_key=ABC123":                    "[REDACTED]",
+		"token: 1234567890":                 "[REDACTED]",
+		"AKIAIOSFODNN7EXAMPLE":              "[REDACTED]",
+		"eyJhbGciOiJIUzI1NiJ9.payload.sig":  "[REDACTED]",
 	}
 	for input, want := range cases {
 		got := redactSecrets(input)
@@ -314,5 +313,7 @@ func TestRedactSecretsUnit(t *testing.T) {
 }
 
 // drainBody is a small helper used in some assertion paths.
-var _ = io.Discard
-var _ = bytes.NewBuffer
+var (
+	_ = io.Discard
+	_ = bytes.NewBuffer
+)

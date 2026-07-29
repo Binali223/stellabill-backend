@@ -8,63 +8,63 @@ import (
 type ContractEventType string
 
 const (
-	EventSubscriptionCreated ContractEventType = "subscription_created"
-	EventSubscriptionUpdated ContractEventType = "subscription_updated"
+	EventSubscriptionCreated  ContractEventType = "subscription_created"
+	EventSubscriptionUpdated  ContractEventType = "subscription_updated"
 	EventSubscriptionCanceled ContractEventType = "subscription_canceled"
-	EventChargeCreated       ContractEventType = "charge_created"
-	EventRefundCreated     ContractEventType = "refund_created"
+	EventChargeCreated        ContractEventType = "charge_created"
+	EventRefundCreated        ContractEventType = "refund_created"
 )
 
 type SorobanEvent struct {
 	EventType ContractEventType `json:"type"`
 	Topics    []string          `json:"topics"`
-	Data      json.RawMessage  `json:"data"`
+	Data      json.RawMessage   `json:"data"`
 	Ledger    uint32            `json:"ledger"`
 	TxHash    string            `json:"tx_hash"`
 }
 
 type SubscriptionCreatedData struct {
 	SubscriptionID string `json:"subscription_id"`
-	PlanID          string `json:"plan_id"`
-	Customer        string `json:"customer"`
-	Amount          string `json:"amount"`
-	Currency        string `json:"currency"`
-	Interval        string `json:"interval"`
-	Status          string `json:"status"`
-	CreatedAt       int64  `json:"created_at"`
+	PlanID         string `json:"plan_id"`
+	Customer       string `json:"customer"`
+	Amount         string `json:"amount"`
+	Currency       string `json:"currency"`
+	Interval       string `json:"interval"`
+	Status         string `json:"status"`
+	CreatedAt      int64  `json:"created_at"`
 }
 
 type SubscriptionUpdatedData struct {
 	SubscriptionID string `json:"subscription_id"`
 	Amount         string `json:"amount,omitempty"`
 	Currency       string `json:"currency,omitempty"`
-	Status        string `json:"status,omitempty"`
+	Status         string `json:"status,omitempty"`
 	Interval       string `json:"interval,omitempty"`
-	UpdatedAt     int64  `json:"updated_at"`
+	UpdatedAt      int64  `json:"updated_at"`
 }
 
 type SubscriptionCanceledData struct {
 	SubscriptionID string `json:"subscription_id"`
-	CanceledAt    int64  `json:"canceled_at"`
-	Reason        string `json:"reason,omitempty"`
+	CanceledAt     int64  `json:"canceled_at"`
+	Reason         string `json:"reason,omitempty"`
 }
 
 type ChargeCreatedData struct {
-	ChargeID        string `json:"charge_id"`
+	ChargeID       string `json:"charge_id"`
 	SubscriptionID string `json:"subscription_id"`
-	Amount          string `json:"amount"`
-	Currency        string `json:"currency"`
-	CreatedAt       int64  `json:"created_at"`
+	Amount         string `json:"amount"`
+	Currency       string `json:"currency"`
+	CreatedAt      int64  `json:"created_at"`
 	Status         string `json:"status"`
 }
 
 type RefundCreatedData struct {
-	RefundID      string `json:"refund_id"`
-	ChargeID     string `json:"charge_id"`
-	Amount       string `json:"amount"`
-	Currency     string `json:"currency"`
-	Reason       string `json:"reason,omitempty"`
-	CreatedAt    int64  `json:"created_at"`
+	RefundID  string `json:"refund_id"`
+	ChargeID  string `json:"charge_id"`
+	Amount    string `json:"amount"`
+	Currency  string `json:"currency"`
+	Reason    string `json:"reason,omitempty"`
+	CreatedAt int64  `json:"created_at"`
 }
 
 type EventDecoder struct{}

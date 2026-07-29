@@ -3,11 +3,11 @@ package middleware
 import (
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/featureflags"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"stellarbill-backend/internal/featureflags"
 )
 
 func TestFaultInjection_Disabled(t *testing.T) {

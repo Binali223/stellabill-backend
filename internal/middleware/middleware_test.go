@@ -12,7 +12,7 @@ import (
 func TestBaggageMiddleware_Populated(t *testing.T) {
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		bag := baggage.FromContext(r.Context())
-		
+
 		tenant := bag.Member("tenant_id")
 		if tenant.Value() != "t-999" {
 			t.Errorf("expected tenant_id 't-999', got '%s'", tenant.Value())
@@ -27,7 +27,7 @@ func TestBaggageMiddleware_Populated(t *testing.T) {
 	req := httptest.NewRequest("GET", "/", nil)
 	ctx := context.WithValue(req.Context(), TenantIDKey, "t-999")
 	ctx = context.WithValue(ctx, CustomerIDKey, "c-888")
-	
+
 	rr := httptest.NewRecorder()
 	handler := BaggageMiddleware(nextHandler)
 	handler.ServeHTTP(rr, req.WithContext(ctx))

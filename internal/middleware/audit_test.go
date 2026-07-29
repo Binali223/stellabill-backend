@@ -9,12 +9,13 @@ import (
 )
 
 type dummySink struct{}
+
 func (s *dummySink) WriteEvent(e audit.AuditEvent) error { return nil }
 
 func TestAuditMiddleware_SuccessPath(t *testing.T) {
-	// 1. Setup a dummy logger 
+	// 1. Setup a dummy logger
 	// (If your Logger is an interface, mock it. If it's a struct, pass an empty/safe instance)
-	dummyLogger := audit.NewLogger("test-secret", &dummySink{}) 
+	dummyLogger := audit.NewLogger("test-secret", &dummySink{})
 
 	// 2. Initialize the middleware
 	middleware := AuditMiddleware(dummyLogger)
@@ -87,7 +88,7 @@ func TestExtractUser(t *testing.T) {
 	// Directly test the extraction utility
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	user := extractUser(req)
-	
+
 	expected := "user_id_from_context"
 	if user != expected {
 		t.Errorf("expected user %v, got %v", expected, user)

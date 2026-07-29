@@ -157,7 +157,7 @@ func (bt *breakerTx) Rollback(ctx context.Context) error {
 	var err error
 	_, _ = bt.breaker.Execute(func() (interface{}, error) {
 		err = bt.tx.Rollback(ctx)
-		if err != nil && err != pgx.ErrTxClosed {
+		if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
 			return nil, err
 		}
 		return nil, nil

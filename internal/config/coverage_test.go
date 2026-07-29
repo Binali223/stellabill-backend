@@ -89,9 +89,9 @@ func TestCoverage_isValidDatabaseURL(t *testing.T) {
 		"http://example.com",
 		"sqlite:///tmp/db.sqlite",
 		"sqlite3:db.sqlite",
-		"postgres://", // no host
+		"postgres://",    // no host
 		"/relative/path", // empty scheme
-		"otsql://valid", // contains 'sql' but not in valid list
+		"otsql://valid",  // contains 'sql' but not in valid list
 	}
 	for _, c := range cases {
 		_ = isValidDatabaseURL(c)
@@ -175,4 +175,3 @@ func TestCoverage_Validate_GoodEnvVars(t *testing.T) {
 	c := &Config{}
 	_ = c.validate(map[string]string{}, nil)
 }
-

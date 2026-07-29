@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-
 	"stellarbill-backend/internal/repository"
 	"stellarbill-backend/internal/timeutil"
 )
@@ -129,7 +128,7 @@ func (s *statementService) ListByCustomer(ctx context.Context, callerID string, 
 		// BUT we should filter by tenant if possible.
 		// Since ListByCustomerID doesn't take tenantID, we might need to add it or trust the caller if it's a merchant.
 		// TODO: Hardening: Filter by tenant if merchant.
-		isAuthorized = true 
+		isAuthorized = true
 	} else if callerID == customerID {
 		isAuthorized = true
 	}

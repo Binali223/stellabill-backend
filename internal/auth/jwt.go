@@ -118,9 +118,9 @@ func NewTokenGenerator(secret string) *TokenGenerator {
 // generateToken creates a token with given claims.
 func (tg *TokenGenerator) generateToken(userID, email, role, tenantID string, expiresAt time.Time) (string, error) {
 	claims := Claims{
-		UserID: userID,
-		Email:  email,
-		Role:   Role(role),
+		UserID:   userID,
+		Email:    email,
+		Role:     Role(role),
 		TenantID: "test-tenant",
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    tg.issuer,
@@ -173,4 +173,3 @@ func (tg *TokenGenerator) GenerateTokenWithoutUserID(email, role string) (string
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(tg.secret)
 }
-

@@ -4,11 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"testing"
-	"time"
-
 	"stellarbill-backend/internal/cache"
 	"stellarbill-backend/internal/worker"
+	"testing"
+	"time"
 )
 
 // TestDatabaseSetup creates an in-memory test database with statements table.
@@ -55,7 +54,6 @@ func insertStatement(t *testing.T, db *sql.DB, id, subID, custID, periodStart, p
 		INSERT INTO statements (id, subscription_id, customer_id, period_start, period_end, issued_at, total_amount, currency, kind, status)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, id, subID, custID, periodStart, periodEnd, issuedAt, "1000", "USD", "invoice", "paid")
-
 	if err != nil {
 		t.Fatalf("Failed to insert statement: %v", err)
 	}

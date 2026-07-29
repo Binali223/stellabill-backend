@@ -3,12 +3,12 @@ package main
 import (
 	"fmt"
 	"os"
+	"stellarbill-backend/internal/routes"
+	"stellarbill-backend/openapi"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gin-gonic/gin"
-	"stellarbill-backend/internal/routes"
-	"stellarbill-backend/openapi"
 )
 
 func main() {

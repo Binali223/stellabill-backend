@@ -3,11 +3,11 @@ package middleware
 import (
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/config"
 	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"stellarbill-backend/internal/config"
 )
 
 func assertHeader(t *testing.T, rec *httptest.ResponseRecorder, key, expected string) {
@@ -22,9 +22,9 @@ func TestSecurityHeaders_Production(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	cfg := &config.Config{
-		Env:                   "production",
+		Env:                    "production",
 		SecurityFrameAncestors: "'none'",
-		SecurityCSPReportURI:  "/csp-report",
+		SecurityCSPReportURI:   "/csp-report",
 	}
 
 	router := gin.New()
@@ -54,9 +54,9 @@ func TestSecurityHeaders_HTMLResponse(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	cfg := &config.Config{
-		Env:                   "production",
+		Env:                    "production",
 		SecurityFrameAncestors: "'none'",
-		SecurityCSPReportURI:  "/csp-report",
+		SecurityCSPReportURI:   "/csp-report",
 	}
 
 	router := gin.New()
@@ -79,9 +79,9 @@ func TestSecurityHeaders_Development(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	cfg := &config.Config{
-		Env:                   "development",
+		Env:                    "development",
 		SecurityFrameAncestors: "'none'",
-		SecurityCSPReportURI:  "/csp-report",
+		SecurityCSPReportURI:   "/csp-report",
 	}
 
 	router := gin.New()
@@ -105,9 +105,9 @@ func TestSecurityHeaders_PreventInsecureFrameOptions(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	cfg := &config.Config{
-		Env:                   "production",
+		Env:                    "production",
 		SecurityFrameAncestors: "'none'",
-		SecurityCSPReportURI:  "/csp-report",
+		SecurityCSPReportURI:   "/csp-report",
 	}
 
 	router := gin.New()
@@ -127,9 +127,9 @@ func TestSecurityHeaders_ProxyLayerConflicts(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	cfg := &config.Config{
-		Env:                   "production",
+		Env:                    "production",
 		SecurityFrameAncestors: "'none'",
-		SecurityCSPReportURI:  "/csp-report",
+		SecurityCSPReportURI:   "/csp-report",
 	}
 
 	routerWithProxy := gin.New()

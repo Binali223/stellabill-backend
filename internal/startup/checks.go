@@ -3,10 +3,9 @@ package startup
 import (
 	"context"
 	"fmt"
+	"stellarbill-backend/internal/config"
 	"strings"
 	"time"
-
-	"stellarbill-backend/internal/config"
 )
 
 // Status represents the result of a single startup check.
@@ -20,10 +19,10 @@ const (
 
 // CheckResult holds the outcome of one startup check.
 type CheckResult struct {
-	Name       string        `json:"name"`
-	Status     Status        `json:"status"`
-	Message    string        `json:"message"`
-	DurationMs int64         `json:"duration_ms"`
+	Name       string `json:"name"`
+	Status     Status `json:"status"`
+	Message    string `json:"message"`
+	DurationMs int64  `json:"duration_ms"`
 }
 
 // DiagnosticsResponse is the machine-readable diagnostics payload.

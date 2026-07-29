@@ -2,12 +2,12 @@ package correlation_test
 
 import (
 	"context"
+	"stellarbill-backend/internal/correlation"
 	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"stellarbill-backend/internal/correlation"
 )
 
 func TestNewID_Format(t *testing.T) {

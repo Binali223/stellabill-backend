@@ -7,9 +7,7 @@ import (
 	"time"
 )
 
-var (
-	ErrEventIDAlreadySeen = errors.New("event ID already seen")
-)
+var ErrEventIDAlreadySeen = errors.New("event ID already seen")
 
 // eventIDEntry represents a cached event ID with its expiration time.
 type eventIDEntry struct {

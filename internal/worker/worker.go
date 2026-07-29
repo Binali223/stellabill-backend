@@ -3,6 +3,8 @@ package worker
 import (
 	"context"
 	"fmt"
+	"stellarbill-backend/internal/correlation"
+	"stellarbill-backend/internal/security"
 	"sync"
 	"time"
 
@@ -11,8 +13,6 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
-	"stellarbill-backend/internal/correlation"
-	"stellarbill-backend/internal/security"
 )
 
 // Config holds worker configuration

@@ -3,11 +3,10 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"stellarbill-backend/internal/cache"
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"stellarbill-backend/internal/cache"
 )
 
 // cacheEnvelope wraps the actual data with a stored timestamp so the decorator
@@ -122,6 +121,16 @@ func (cpr *CachedPlanRepo) FindByID(ctx context.Context, id string) (*PlanRow, e
 		return nil, err
 	}
 	return &pr, nil
+}
+
+// FindByIDs delegates batch fetching to the underlying backend.
+func (cpr *CachedPlanRepo) FindByIDs(ctx context.Context, ids []string) ([]*PlanRow, error) {
+	return cpr.backend.FindByIDs(ctx, ids)
+}
+
+// FindByIDsAndTenant delegates batch fetching to the underlying backend.
+func (cpr *CachedPlanRepo) FindByIDsAndTenant(ctx context.Context, ids []string, tenantID string) ([]*PlanRow, error) {
+	return cpr.backend.FindByIDsAndTenant(ctx, ids, tenantID)
 }
 
 // List returns all plans. It caches the full list under a single key.

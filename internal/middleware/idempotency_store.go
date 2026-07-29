@@ -174,7 +174,7 @@ func (s *PostgresIdempotencyStore) CountExpiredPending(ctx context.Context) (int
 	}
 
 	qCount := `SELECT COUNT(*) FROM idempotency_keys WHERE expires_at <= NOW()`
-	
+
 	var count int64
 	err := s.pool.QueryRow(ctx, qCount).Scan(&count)
 	if err != nil {
@@ -298,4 +298,3 @@ func (s *InMemoryIdempotencyStore) CountExpiredPending(ctx context.Context) (int
 	}
 	return count, nil
 }
-

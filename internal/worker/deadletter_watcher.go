@@ -5,9 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"time"
-
 	"stellarbill-backend/internal/integrations/pagerduty"
+	"time"
 )
 
 const (
@@ -44,10 +43,10 @@ func DefaultDeadLetterWatcherConfig() DeadLetterWatcherConfig {
 // DeadLetterWatcher polls dead_letter_events and pages via PagerDuty when the
 // inflow rate crosses the configured threshold.
 type DeadLetterWatcher struct {
-	db      *sql.DB
-	pd      AlertClient
-	cfg     DeadLetterWatcherConfig
-	firing  bool // tracks whether an incident is currently open
+	db     *sql.DB
+	pd     AlertClient
+	cfg    DeadLetterWatcherConfig
+	firing bool // tracks whether an incident is currently open
 }
 
 // NewDeadLetterWatcher creates a watcher. db must be connected; pd may be nil

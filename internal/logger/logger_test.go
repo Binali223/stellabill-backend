@@ -9,7 +9,6 @@ import (
 )
 
 func TestLoggerOutputsJSON(t *testing.T) {
-
 	var buf bytes.Buffer
 	Log.SetOutput(&buf)
 	Log.SetFormatter(&logrus.JSONFormatter{})
@@ -18,7 +17,6 @@ func TestLoggerOutputsJSON(t *testing.T) {
 
 	var result map[string]interface{}
 	err := json.Unmarshal(buf.Bytes(), &result)
-
 	if err != nil {
 		t.Errorf("log is not valid JSON: %v", err)
 	}
@@ -27,5 +25,3 @@ func TestLoggerOutputsJSON(t *testing.T) {
 		t.Errorf("message field missing, got: %+v", result)
 	}
 }
-
-

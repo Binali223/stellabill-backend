@@ -6,12 +6,12 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/service"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"stellarbill-backend/internal/service"
 )
 
 // mockSwapRouter implements service.SwapRouter for tests.
@@ -23,6 +23,7 @@ type mockSwapRouter struct {
 func (m *mockSwapRouter) SwapExactTokensForTokens(_, _ string, amountIn, _ float64) (*service.SwapResult, error) {
 	return m.result, m.err
 }
+
 func (m *mockSwapRouter) SwapTokensForExactTokens(_, _ string, amountOut, _ float64) (*service.SwapResult, error) {
 	return m.result, m.err
 }

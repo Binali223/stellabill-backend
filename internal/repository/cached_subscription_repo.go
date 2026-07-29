@@ -3,11 +3,10 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"stellarbill-backend/internal/cache"
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"stellarbill-backend/internal/cache"
 )
 
 // CachedSubscriptionRepo decorates a SubscriptionRepository with a read-through cache.
@@ -168,6 +167,11 @@ func (csr *CachedSubscriptionRepo) FindByIDAndTenant(ctx context.Context, id str
 		return nil, err
 	}
 	return &sr, nil
+}
+
+// FindByIDsAndTenant delegates batch fetching to the underlying backend.
+func (csr *CachedSubscriptionRepo) FindByIDsAndTenant(ctx context.Context, ids []string, tenantID string) ([]*SubscriptionRow, error) {
+	return csr.backend.FindByIDsAndTenant(ctx, ids, tenantID)
 }
 
 func (csr *CachedSubscriptionRepo) ListByTenant(ctx context.Context, tenantID string) ([]*SubscriptionRow, error) {

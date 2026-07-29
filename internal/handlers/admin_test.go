@@ -6,13 +6,13 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/audit"
+	"stellarbill-backend/internal/cache"
+	"stellarbill-backend/internal/repository"
 	"sync"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"stellarbill-backend/internal/audit"
-	"stellarbill-backend/internal/cache"
-	"stellarbill-backend/internal/repository"
 )
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -191,7 +191,6 @@ func TestAdminDefaultToken(t *testing.T) {
 	}
 }
 
-
 // ── new tests: real cache invalidation behaviour ─────────────────────────────
 
 func TestAdminPurge_FullPurge(t *testing.T) {
@@ -361,7 +360,12 @@ func TestAdminPurge_PartialFailure(t *testing.T) {
 
 	nsMap := make(map[string]namespaceSummary)
 	for _, ns := range resp.Namespaces {
-		nsMap[ns.Namespace] = ns
+		nsMap[ns.Namespace] = namespaceSummary{
+			Namespace:     ns.Namespace,
+			KeysPurged:    ns.KeysPurged,
+			CountersReset: ns.CountersReset,
+			Error:         ns.Error,
+		}
 	}
 	if nsMap["plans"].KeysPurged != 3 {
 		t.Fatalf("plans: expected 3 keys purged, got %d", nsMap["plans"].KeysPurged)
@@ -490,9 +494,9 @@ func TestAdminPurge_WithRealRepos(t *testing.T) {
 	if h2 != 0 || m2 != 0 {
 		t.Fatalf("plan metrics not reset: hits=%d misses=%d", h2, m2)
 	}
-	h3, m3 := cachedSubs.Metrics()
-	if h3 != 0 || m3 != 0 {
-		t.Fatalf("sub metrics not reset: hits=%d misses=%d", h3, m3)
+	h3, m3, s3 := cachedSubs.Metrics()
+	if h3 != 0 || m3 != 0 || s3 != 0 {
+		t.Fatalf("sub metrics not reset: hits=%d misses=%d stales=%d", h3, m3, s3)
 	}
 
 	// Subsequent reads re-populate from backend (no stale data)
@@ -502,3 +506,214 @@ func TestAdminPurge_WithRealRepos(t *testing.T) {
 	}
 }
 
+// ── admin login tests ─────────────────────────────────────────────────────────
+
+func buildLoginRouter(sink *audit.MemorySink, handler *AdminHandler) *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	logger := audit.NewLogger("secret", sink)
+	r.Use(audit.Middleware(logger))
+	r.POST("/api/admin/login", handler.Login)
+	return r
+}
+
+func doLoginRequest(r *gin.Engine, username, token string) *httptest.ResponseRecorder {
+	req, _ := http.NewRequest(http.MethodPost, "/api/admin/login", nil)
+	if username != "" {
+		req.Header.Set("X-Admin-User", username)
+	}
+	if token != "" {
+		req.Header.Set("X-Admin-Token", token)
+	}
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+	return rec
+}
+
+func TestAdminLogin_Success(t *testing.T) {
+	sink := &audit.MemorySink{}
+	handler := NewAdminHandler("admin-token")
+	r := buildLoginRouter(sink, handler)
+
+	rec := doLoginRequest(r, "root", "admin-token")
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var resp AdminLoginResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if resp.Status != "authenticated" {
+		t.Fatalf("expected status 'authenticated', got %q", resp.Status)
+	}
+
+	entries := sink.Entries()
+	if len(entries) == 0 {
+		t.Fatal("expected audit entry")
+	}
+	last := entries[len(entries)-1]
+	if last.Action != audit.ActionAdminLogin {
+		t.Fatalf("expected action %q, got %q", audit.ActionAdminLogin, last.Action)
+	}
+	if last.Outcome != "success" {
+		t.Fatalf("expected outcome 'success', got %q", last.Outcome)
+	}
+}
+
+func TestAdminLogin_InvalidCredentials(t *testing.T) {
+	sink := &audit.MemorySink{}
+	handler := NewAdminHandler("admin-token")
+	r := buildLoginRouter(sink, handler)
+
+	rec := doLoginRequest(r, "root", "wrong-token")
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	entries := sink.Entries()
+	last := entries[len(entries)-1]
+	if last.Outcome != "denied" {
+		t.Fatalf("expected outcome 'denied', got %q", last.Outcome)
+	}
+}
+
+func TestAdminLogin_MissingCredentials(t *testing.T) {
+	sink := &audit.MemorySink{}
+	handler := NewAdminHandler("admin-token")
+	r := buildLoginRouter(sink, handler)
+
+	rec := doLoginRequest(r, "", "")
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestAdminLogin_LockoutAfterFailures(t *testing.T) {
+	sink := &audit.MemorySink{}
+	handler := NewAdminHandler("admin-token")
+	r := buildLoginRouter(sink, handler)
+
+	for i := 0; i < 3; i++ {
+		rec := doLoginRequest(r, "root", "wrong")
+		if rec.Code == http.StatusTooManyRequests {
+			var resp AdminLoginResponse
+			if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+				t.Fatalf("failed to decode: %v", err)
+			}
+			if resp.Status != "rate_limited" {
+				t.Fatalf("expected 'rate_limited', got %q", resp.Status)
+			}
+			if resp.LockoutDuration <= 0 {
+				t.Fatalf("expected positive lockout duration, got %d", resp.LockoutDuration)
+			}
+			return
+		}
+		if i < 2 && rec.Code != http.StatusUnauthorized {
+			t.Fatalf("attempt %d: expected 401, got %d", i+1, rec.Code)
+		}
+	}
+
+	t.Fatal("expected rate limit to trigger within 3 attempts, but never got 429")
+}
+
+func TestAdminLogin_LockoutResetsOnSuccess(t *testing.T) {
+	sink := &audit.MemorySink{}
+	handler := NewAdminHandler("admin-token")
+	r := buildLoginRouter(sink, handler)
+
+	doLoginRequest(r, "root", "wrong")
+	doLoginRequest(r, "root", "wrong")
+
+	rec := doLoginRequest(r, "root", "admin-token")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 on successful login after failures, got %d", rec.Code)
+	}
+
+	rec2 := doLoginRequest(r, "root", "wrong")
+	if rec2.Code != http.StatusUnauthorized {
+		t.Fatalf("expected lockout to be reset, got %d", rec2.Code)
+	}
+}
+
+func TestAdminLogin_LockoutIsolatedByAccount(t *testing.T) {
+	sink := &audit.MemorySink{}
+	handler := NewAdminHandler("admin-token")
+	r := buildLoginRouter(sink, handler)
+
+	doLoginRequest(r, "root", "wrong")
+	doLoginRequest(r, "root", "wrong")
+	doLoginRequest(r, "root", "wrong")
+
+	rec := doLoginRequest(r, "other", "wrong")
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected other account to not be locked out, got %d", rec.Code)
+	}
+}
+
+func TestAdminLogin_AuditOnLockout(t *testing.T) {
+	sink := &audit.MemorySink{}
+	handler := NewAdminHandler("admin-token")
+	r := buildLoginRouter(sink, handler)
+
+	for i := 0; i < 5; i++ {
+		rec := doLoginRequest(r, "root", "wrong")
+		if rec.Code == http.StatusTooManyRequests {
+			break
+		}
+	}
+
+	entries := sink.Entries()
+	hasLockout := false
+	for _, e := range entries {
+		if e.Outcome == "lockout" && e.Action == audit.ActionAdminLogin {
+			hasLockout = true
+			break
+		}
+	}
+	if !hasLockout {
+		t.Fatal("expected audit event with lockout outcome")
+	}
+}
+
+func TestAdminLogin_ConstantTimeComparePreventsTimingAttack(t *testing.T) {
+	handler := NewAdminHandler("secret-admin-token-42")
+	gin.SetMode(gin.TestMode)
+
+	longToken := "secret-admin-token-42"
+	shortToken := "wrong"
+	r1 := doLoginRequest(buildLoginRouter(&audit.MemorySink{}, handler), "root", longToken)
+	if r1.Code != http.StatusOK {
+		t.Fatalf("expected 200 with correct token, got %d", r1.Code)
+	}
+
+	r2 := doLoginRequest(buildLoginRouter(&audit.MemorySink{}, handler), "root", shortToken)
+	if r2.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 with wrong token, got %d", r2.Code)
+	}
+}
+
+func TestAdminLogin_EmptyTokenIsRejected(t *testing.T) {
+	sink := &audit.MemorySink{}
+	handler := NewAdminHandler("admin-token")
+	r := buildLoginRouter(sink, handler)
+
+	rec := doLoginRequest(r, "root", "")
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", rec.Code)
+	}
+}
+
+func TestAdminLogin_EmptyUsernameIsRejected(t *testing.T) {
+	sink := &audit.MemorySink{}
+	handler := NewAdminHandler("admin-token")
+	r := buildLoginRouter(sink, handler)
+
+	rec := doLoginRequest(r, "", "admin-token")
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", rec.Code)
+	}
+}

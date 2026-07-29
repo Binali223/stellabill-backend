@@ -4,10 +4,9 @@ import (
 	"context"
 	"errors"
 	"os"
+	"stellarbill-backend/internal/secrets"
 	"strings"
 	"testing"
-
-	"stellarbill-backend/internal/secrets"
 )
 
 const (
@@ -69,6 +68,7 @@ func newValidProvider() *stubProvider {
 			"DATABASE_URL": validDBURL,
 			"JWT_SECRET":   validJWTSecret,
 			"ADMIN_TOKEN":  validAdminToken,
+			"REDIS_URL":    "redis://localhost:6379",
 		},
 		errs: map[string]error{},
 	}
@@ -136,7 +136,6 @@ func TestLoadFailsOnWeakSecrets(t *testing.T) {
 	})
 }
 
-
 func TestLoadRejectsInvalidRateLimitCombination(t *testing.T) {
 	withEnvVars(t, map[string]string{
 		"ENV":              "development",
@@ -170,7 +169,6 @@ func TestLoadRejectsTimeoutOutOfRange(t *testing.T) {
 	})
 }
 
-
 func TestLoadProviderErrorsAreClassified(t *testing.T) {
 	withEnvVars(t, map[string]string{"ENV": "development"}, func() {
 		provider := &stubProvider{
@@ -192,6 +190,36 @@ func TestLoadProviderErrorsAreClassified(t *testing.T) {
 		}
 		if !strings.Contains(msg, "MISSING_ENV_VAR") {
 			t.Fatalf("expected MISSING_ENV_VAR for not found secret, got: %s", msg)
+		}
+	})
+}
+
+func TestLoadRejectsShutdownTimeoutOutOfRange(t *testing.T) {
+	withEnvVars(t, map[string]string{
+		"ENV":                       "development",
+		"GRACEFUL_SHUTDOWN_TIMEOUT": "0",
+	}, func() {
+		_, err := Load(WithSecretsProvider(newValidProvider()))
+		if err == nil {
+			t.Fatal("expected invalid shutdown timeout error")
+		}
+		if !strings.Contains(err.Error(), "GRACEFUL_SHUTDOWN_TIMEOUT") {
+			t.Fatalf("expected GRACEFUL_SHUTDOWN_TIMEOUT in error, got: %v", err)
+		}
+	})
+}
+
+func TestLoadShutdownTimeoutDefault(t *testing.T) {
+	withEnvVars(t, map[string]string{
+		"ENV": "development",
+	}, func() {
+		cfg, err := Load(WithSecretsProvider(newValidProvider()))
+		if err != nil {
+			t.Fatalf("expected no error, got: %v", err)
+		}
+		if cfg.GracefulShutdownTimeout != DefaultGracefulShutdownTimeout {
+			t.Fatalf("expected default shutdown timeout %d, got %d",
+				DefaultGracefulShutdownTimeout, cfg.GracefulShutdownTimeout)
 		}
 	})
 }

@@ -71,12 +71,12 @@ func FuzzListPlans(f *testing.F) {
 		// Limit boundary values
 		{"0", ""},
 		{"-1", ""},
-		{"9999999999", ""},   // overflow-range integer
-		{"2147483648", ""},   // > int32 max
-		{"-2147483649", ""},  // < int32 min
-		{"1.5", ""},          // float — must be rejected gracefully
-		{"1e3", ""},          // scientific notation
-		{"010", ""},          // octal-looking
+		{"9999999999", ""},  // overflow-range integer
+		{"2147483648", ""},  // > int32 max
+		{"-2147483649", ""}, // < int32 min
+		{"1.5", ""},         // float — must be rejected gracefully
+		{"1e3", ""},         // scientific notation
+		{"010", ""},         // octal-looking
 
 		// Non-numeric limit garbage
 		{"abc", ""},
@@ -101,13 +101,13 @@ func FuzzListPlans(f *testing.F) {
 		{"10", ""},
 
 		// Cursor that decodes to something non-JSON
-		{"10", "aGVsbG8="},    // base64("hello")
-		{"10", "e30="},        // base64("{}")  — valid JSON but empty cursor
-		{"10", "bnVsbA=="},    // base64("null")
+		{"10", "aGVsbG8="}, // base64("hello")
+		{"10", "e30="},     // base64("{}")  — valid JSON but empty cursor
+		{"10", "bnVsbA=="}, // base64("null")
 
 		// UTF-8 boundary stress
-		{"10", "5L2g5aW9"},                    // valid base64 of Chinese characters
-		{string([]byte{0xC3, 0xA9}), ""},      // é — valid 2-byte UTF-8
+		{"10", "5L2g5aW9"},               // valid base64 of Chinese characters
+		{string([]byte{0xC3, 0xA9}), ""}, // é — valid 2-byte UTF-8
 
 		// Extremely long cursor
 		{"10", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="},

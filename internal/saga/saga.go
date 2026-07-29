@@ -9,31 +9,40 @@ import (
 type StepStatus string
 
 const (
-	StepPending           StepStatus = "pending"
-	StepRunning           StepStatus = "running"
-	StepCompleted         StepStatus = "completed"
-	StepFailed            StepStatus = "failed"
-	StepCompensating      StepStatus = "compensating"
-	StepCompensated       StepStatus = "compensated"
+	StepPending            StepStatus = "pending"
+	StepRunning            StepStatus = "running"
+	StepRetrying           StepStatus = "retrying"
+	StepCompleted          StepStatus = "completed"
+	StepFailed             StepStatus = "failed"
+	StepCompensating       StepStatus = "compensating"
+	StepCompensated        StepStatus = "compensated"
 	StepCompensationFailed StepStatus = "compensation_failed"
 )
 
 type SagaStatus string
 
 const (
-	SagaRunning     SagaStatus = "running"
-	SagaCompleted   SagaStatus = "completed"
-	SagaFailed      SagaStatus = "failed"
+	SagaRunning      SagaStatus = "running"
+	SagaCompleted    SagaStatus = "completed"
+	SagaFailed       SagaStatus = "failed"
 	SagaCompensating SagaStatus = "compensating"
 	SagaCompensated  SagaStatus = "compensated"
 )
 
 type StepFn func(ctx context.Context, sagaCtx SagaContext) error
 
+type RetryPolicy struct {
+	MaxAttempts int
+	BaseDelay   time.Duration
+	MaxDelay    time.Duration
+	Jitter      float64
+}
+
 type Step struct {
-	Key        string
-	Execute    StepFn
-	Compensate StepFn
+	Key         string
+	Execute     StepFn
+	Compensate  StepFn
+	RetryPolicy *RetryPolicy
 }
 
 type StepResult struct {
@@ -43,6 +52,7 @@ type StepResult struct {
 	ErrorMessage  string     `json:"error_message,omitempty"`
 	ExecutedAt    *time.Time `json:"executed_at,omitempty"`
 	CompensatedAt *time.Time `json:"compensated_at,omitempty"`
+	RetryAttempt  int        `json:"retry_attempt,omitempty"`
 }
 
 type SagaContext struct {

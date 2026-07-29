@@ -4,12 +4,24 @@ import (
 	"context"
 	"errors"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
-
 	"stellarbill-backend/internal/audit"
 	"stellarbill-backend/internal/service"
+
+	"github.com/gin-gonic/gin"
 )
+
+func getRequiredStringContextValue(c *gin.Context, key, msg string) (string, bool) {
+	value, exists := c.Get(key)
+	if !exists {
+		RespondWithError(c, http.StatusBadRequest, ErrorCodeBadRequest, msg)
+		return "", false
+	}
+	if str, ok := value.(string); ok && str != "" {
+		return str, true
+	}
+	RespondWithError(c, http.StatusBadRequest, ErrorCodeBadRequest, msg)
+	return "", false
+}
 
 // ExportJobManager defines the interface for creating and querying export jobs.
 // The handler depends on this interface rather than a concrete type, making it
@@ -17,19 +29,22 @@ import (
 type ExportJobManager interface {
 	CreateJob(ctx context.Context, tenantID, callerID string, callerRoles []string) (*service.ExportJob, error)
 	GetJob(id string) (*service.ExportJob, error)
+	GetOperation(id string) (*service.ExportOperation, error)
 }
 
 type createExportResponse struct {
-	JobID     string `json:"job_id"`
-	StatusURL string `json:"status_url"`
-	Message   string `json:"message"`
+	JobID        string `json:"job_id"`
+	OperationID  string `json:"operation_id,omitempty"`
+	StatusURL    string `json:"status_url"`
+	OperationURL string `json:"operation_url,omitempty"`
+	Message      string `json:"message"`
 }
 
 type exportStatusResponse struct {
-	JobID  string                   `json:"job_id"`
-	Status service.ExportJobStatus  `json:"status"`
+	JobID  string                      `json:"job_id"`
+	Status service.ExportJobStatus     `json:"status"`
 	Result *service.TenantExportResult `json:"result,omitempty"`
-	Error  string                   `json:"error,omitempty"`
+	Error  string                      `json:"error,omitempty"`
 }
 
 // NewTenantExportHandler returns a gin.HandlerFunc for POST /api/v1/tenants/me/export.
@@ -84,7 +99,7 @@ func NewTenantExportHandler(jobManager ExportJobManager) gin.HandlerFunc {
 		job, err := jobManager.CreateJob(c.Request.Context(), tenantID, callerID, roles)
 		if err != nil {
 			if errors.Is(err, service.ErrExportInProgress) {
-				RespondWithError(c, http.StatusConflict, ErrorCodeConflict, "An export is already in progress for this tenant")
+				RespondWithError(c, http.StatusConflict, ErrorCodeExportInProgress, "An export is already in progress for this tenant")
 				return
 			}
 			RespondWithInternalError(c, "Failed to create export job")
@@ -92,13 +107,16 @@ func NewTenantExportHandler(jobManager ExportJobManager) gin.HandlerFunc {
 		}
 
 		audit.LogAction(c, "tenant_export", "tenant:"+tenantID, "queued", map[string]string{
-			"job_id": job.ID,
+			"job_id":       job.ID,
+			"operation_id": job.OperationID,
 		})
 
 		c.JSON(http.StatusAccepted, createExportResponse{
-			JobID:     job.ID,
-			StatusURL: "/api/v1/tenants/me/export/" + job.ID,
-			Message:   "Export job created. Poll the status URL for completion.",
+			JobID:        job.ID,
+			OperationID:  job.OperationID,
+			StatusURL:    "/api/v1/tenants/me/export/" + job.ID,
+			OperationURL: "/api/v1/operations/" + job.OperationID,
+			Message:      "Export job created. Poll the operation URL for completion.",
 		})
 	}
 }
@@ -152,6 +170,51 @@ func NewTenantExportStatusHandler(jobManager ExportJobManager) gin.HandlerFunc {
 			Status: job.Status,
 			Result: job.Result,
 			Error:  job.Error,
+		})
+	}
+}
+
+func NewOperationStatusHandler(jobManager ExportJobManager) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if jobManager == nil {
+			RespondWithInternalError(c, "export service unavailable")
+			return
+		}
+
+		callerID, _, ok := getAuthContext(c)
+		if !ok {
+			RespondWithAuthError(c, "unauthorized")
+			return
+		}
+
+		tenantID, ok := getRequiredStringContextValue(c, "tenantID", "Missing tenant context")
+		if !ok {
+			return
+		}
+
+		operationID := c.Param("id")
+		if operationID == "" {
+			RespondWithError(c, http.StatusBadRequest, ErrorCodeBadRequest, "id is required")
+			return
+		}
+
+		operation, err := jobManager.GetOperation(operationID)
+		if err != nil {
+			code, errCode, msg := MapServiceErrorToResponse(err)
+			RespondWithError(c, code, errCode, msg)
+			return
+		}
+
+		if operation.TenantID != tenantID && callerID != operation.CallerID {
+			RespondWithError(c, http.StatusNotFound, ErrorCodeNotFound, "Operation not found")
+			return
+		}
+
+		c.JSON(http.StatusOK, exportOperationResponse{
+			OperationID: operation.ID,
+			Status:      operation.Status,
+			Result:      operation.Result,
+			Error:       operation.Error,
 		})
 	}
 }

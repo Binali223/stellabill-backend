@@ -3,15 +3,14 @@ package handlers
 import (
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/auth"
+	"stellarbill-backend/internal/reconciliation"
+	"stellarbill-backend/internal/testutil/golden"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
-
-	"stellarbill-backend/internal/auth"
-	"stellarbill-backend/internal/reconciliation"
-	"stellarbill-backend/internal/testutil/golden"
 )
 
 type mockReportStore struct {
@@ -162,7 +161,7 @@ func TestListReports_Golden(t *testing.T) {
 			router.ServeHTTP(w, req)
 
 			require.Equal(t, http.StatusOK, w.Code)
-			
+
 			golden.AssertJSON(t, w.Body.Bytes(), tt.golden)
 		})
 	}

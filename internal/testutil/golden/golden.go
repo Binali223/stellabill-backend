@@ -15,8 +15,10 @@ import (
 var update = flag.Bool("update", false, "update golden files")
 
 // Regex patterns for standard UUIDs (v4) and ISO8601/RFC3339 timestamps.
-var uuidRegex = regexp.MustCompile(`(?i)[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}`)
-var timestampRegex = regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})`)
+var (
+	uuidRegex      = regexp.MustCompile(`(?i)[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}`)
+	timestampRegex = regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})`)
+)
 
 // AssertJSON normalizes the actual JSON, pretty-prints it, and compares it to a golden file.
 // If the -update flag is passed, it writes the normalized JSON to the golden file instead.

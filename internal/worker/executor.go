@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"fmt"
+	"stellarbill-backend/internal/security"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -10,7 +11,6 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
-	"stellarbill-backend/internal/security"
 )
 
 var tracer = otel.Tracer("worker/executor")

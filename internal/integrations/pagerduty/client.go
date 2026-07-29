@@ -10,6 +10,8 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"stellarbill-backend/internal/httpx"
 )
 
 const (
@@ -37,11 +39,11 @@ type payload struct {
 }
 
 type details struct {
-	Summary   string                 `json:"summary"`
-	Source    string                 `json:"source"`
-	Severity  Severity               `json:"severity"`
-	Timestamp string                 `json:"timestamp"`
-	CustomDetails map[string]any     `json:"custom_details,omitempty"`
+	Summary       string         `json:"summary"`
+	Source        string         `json:"source"`
+	Severity      Severity       `json:"severity"`
+	Timestamp     string         `json:"timestamp"`
+	CustomDetails map[string]any `json:"custom_details,omitempty"`
 }
 
 // HTTPClient is the interface used for sending events, allowing test injection.
@@ -56,12 +58,18 @@ type Client struct {
 	http       HTTPClient
 }
 
+// defaultPool is the shared per-host connection pool backing Client
+// instances created with New. It gives PagerDuty (and any other host
+// dialed through it) its own connection budget, circuit breaker, and
+// DNS-TTL-aware dialing instead of an ad hoc *http.Client.
+var defaultPool = httpx.New(httpx.DefaultConfig())
+
 // New creates a Client. routingKey must be a non-empty PagerDuty integration key.
 func New(routingKey string) *Client {
 	return &Client{
 		routingKey: routingKey,
 		endpoint:   defaultEndpoint,
-		http:       &http.Client{Timeout: 10 * time.Second},
+		http:       defaultPool,
 	}
 }
 
@@ -133,7 +141,7 @@ func (c *Client) send(ctx context.Context, p payload) error {
 			lastErr = fmt.Errorf("pagerduty: http error: %w", err)
 			continue
 		}
-		io.Copy(io.Discard, resp.Body) //nolint:errcheck
+		io.Copy(io.Discard, resp.Body) //nolint:errcheck // best-effort drain of response body
 		resp.Body.Close()
 
 		if resp.StatusCode >= 500 {

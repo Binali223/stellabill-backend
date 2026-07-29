@@ -3,19 +3,25 @@ package service
 import (
 	"errors"
 	"math"
+
+	"stellarbill-backend/internal/errcode"
 )
 
 // ErrInsufficientLiquidity is returned when a swap cannot be fulfilled.
 var ErrInsufficientLiquidity = errors.New("insufficient liquidity")
 
+func init() {
+	errcode.Register(func(err error) bool { return errors.Is(err, ErrInsufficientLiquidity) }, errcode.CodeSwapInsufficientLiquidity)
+}
+
 // SwapResult holds the output of a swap operation.
 type SwapResult struct {
-	TokenIn      string  `json:"token_in"`
-	TokenOut     string  `json:"token_out"`
-	AmountIn     float64 `json:"amount_in"`
-	AmountOut    float64 `json:"amount_out"`
-	PriceImpact  float64 `json:"price_impact"`
-	Fee          float64 `json:"fee"`
+	TokenIn     string  `json:"token_in"`
+	TokenOut    string  `json:"token_out"`
+	AmountIn    float64 `json:"amount_in"`
+	AmountOut   float64 `json:"amount_out"`
+	PriceImpact float64 `json:"price_impact"`
+	Fee         float64 `json:"fee"`
 }
 
 // SwapRouter defines the interface for token swap operations.

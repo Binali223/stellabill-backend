@@ -6,14 +6,13 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"stellarbill-backend/internal/routes"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"gopkg.in/yaml.v3"
-
-	"stellarbill-backend/internal/routes"
 )
 
 const (

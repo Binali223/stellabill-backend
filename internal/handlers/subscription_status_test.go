@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"stellarbill-backend/internal/auth"
+	"stellarbill-backend/internal/repository"
+	"stellarbill-backend/internal/service"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"stellarbill-backend/internal/auth"
-	"stellarbill-backend/internal/repository"
-	"stellarbill-backend/internal/service"
 )
 
 func setupSubscriptionStatusRouter(svc service.SubscriptionService, tenantID string, roles []auth.Role, callerID string) *gin.Engine {
@@ -206,8 +206,8 @@ func TestChangeSubscriptionStatusHandler_RequiresManagePermission(t *testing.T) 
 
 	rUnauthorized := setupSubscriptionStatusRouter(svc, "tenant-1", nil, "merchant-1")
 	rec := performStatusChangeRequest(t, rUnauthorized, "sub-6", map[string]string{"status": "paused"})
-	
-	if rec.Code != http.StatusForbidden { 
+
+	if rec.Code != http.StatusForbidden {
 		t.Fatalf("expected 403, got %d: %s", rec.Code, rec.Body.String())
 	}
 

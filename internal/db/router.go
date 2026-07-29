@@ -6,6 +6,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	middlewarepkg "stellarbill-backend/internal/middleware"
 )
 
 type contextKey string
@@ -179,10 +181,17 @@ func (r *ReadRouter) QueryContext(ctx context.Context, query string, args ...any
 		return nil, err
 	}
 	return resultRows, nil
+	if acc := middlewarepkg.AccumulatorFromContext(ctx); acc != nil {
+		acc.AddDBRowsRead(1)
+	}
+	return r.Reader(ctx).QueryContext(ctx, query, args...)
 }
 
 // QueryRowContext routes reads to the Reader.
 func (r *ReadRouter) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
+	if acc := middlewarepkg.AccumulatorFromContext(ctx); acc != nil {
+		acc.AddDBRowsRead(1)
+	}
 	return r.Reader(ctx).QueryRowContext(ctx, query, args...)
 }
 

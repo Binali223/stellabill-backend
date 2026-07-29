@@ -24,7 +24,7 @@ func BenchmarkThresholdCheck_Plans_Small(b *testing.B) {
 
 func TestBenchmarkThresholds_Plans(t *testing.T) {
 	tests := []struct {
-		name       string
+		name      string
 		dataSize  int
 		threshold BenchmarkThresholds
 	}{
@@ -53,7 +53,7 @@ func TestBenchmarkThresholds_Plans(t *testing.T) {
 
 func TestBenchmarkThresholds_Subscriptions(t *testing.T) {
 	tests := []struct {
-		name       string
+		name      string
 		dataSize  int
 		threshold BenchmarkThresholds
 	}{

@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"stellarbill-backend/internal/httpx"
 )
 
 // Service provides the main outbox functionality
@@ -17,6 +19,7 @@ type Service struct {
 	dispatcher Dispatcher
 	db         *sql.DB
 	jwe        *JWEConfig
+	ring       *ConsistentHashRing
 }
 
 // JWEConfig holds optional JWE encryption settings for sensitive events.
@@ -33,23 +36,29 @@ type ServiceConfig struct {
 	PublisherType    string // "console", "http", "multi"
 	HTTPEndpoint     string
 	JWE              *JWEConfig
+	// HTTPPool is the shared connection pool used by the "http" and
+	// "multi" publisher types. Defaults to a package-level shared pool
+	// when nil, so callers only need to set it to share a pool across
+	// multiple services or to override its tuning.
+	HTTPPool *httpx.Pool
 }
 
 // NewService creates a new outbox service
 func NewService(db *sql.DB, config ServiceConfig) (*Service, error) {
 	repo := NewPostgresRepository(db)
-	
+
 	// Create publisher based on configuration
 	var publisher Publisher
+	httpClient := NewPooledHTTPClient(defaultHTTPPool)
 	switch config.PublisherType {
 	case "console":
 		publisher = NewConsolePublisher()
 	case "http":
-		publisher = NewHTTPPublisher(config.HTTPEndpoint, &DefaultHTTPClient{})
+		publisher = NewHTTPPublisher(config.HTTPEndpoint, httpClient)
 	case "multi":
 		publisher = NewMultiPublisher(
 			NewConsolePublisher(),
-			NewHTTPPublisher(config.HTTPEndpoint, &DefaultHTTPClient{}),
+			NewHTTPPublisher(config.HTTPEndpoint, httpClient),
 		)
 	default:
 		publisher = NewConsolePublisher() // Default to console
@@ -66,22 +75,42 @@ func NewService(db *sql.DB, config ServiceConfig) (*Service, error) {
 		}
 		publisher = NewJWEPublisher(publisher, config.JWE.Keys, encryptor, sensitive)
 	}
-	
-	dispatcher := NewDispatcher(repo, publisher, config.DispatcherConfig)
+
+	// Create dispatcher: use sharded dispatcher when shard config is set.
+	var dispatcher Dispatcher
+	var ring *ConsistentHashRing
+	if config.DispatcherConfig.ShardCount > 0 {
+		d, err := NewShardedDispatcher(repo, publisher, db, config.DispatcherConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create sharded dispatcher: %w", err)
+		}
+		dispatcher = d
+		ring = NewConsistentHashRing(config.DispatcherConfig.ShardCount, 150)
+	} else {
+		dispatcher = NewDispatcher(repo, publisher, config.DispatcherConfig)
+	}
 
 	return &Service{
 		repository: repo,
 		dispatcher: dispatcher,
 		db:         db,
 		jwe:        config.JWE,
+		ring:       ring,
 	}, nil
 }
 
 // PublishEvent publishes an event using the outbox pattern
 func (s *Service) PublishEvent(ctx context.Context, eventType string, data interface{}, aggregateID, aggregateType *string) error {
-	event, err := s.buildEvent(eventType, data, aggregateID, aggregateType, nil)
+	tenantID := extractTenantID(ctx)
+
+	event, err := s.buildEvent(eventType, data, aggregateID, aggregateType, nil, tenantID)
 	if err != nil {
 		return fmt.Errorf("failed to create event: %w", err)
+	}
+
+	// Compute partition from tenant_id using the consistent hash ring.
+	if s.ring != nil && event.TenantID != nil {
+		event.Partition = s.ring.GetPartition(*event.TenantID)
 	}
 
 	if err := s.storeEventInTransaction(ctx, event); err != nil {
@@ -92,12 +121,12 @@ func (s *Service) PublishEvent(ctx context.Context, eventType string, data inter
 	return nil
 }
 
-func (s *Service) buildEvent(eventType string, data interface{}, aggregateID, aggregateType *string, deduplicationID *string) (*Event, error) {
+func (s *Service) buildEvent(eventType string, data interface{}, aggregateID, aggregateType *string, deduplicationID *string, tenantID *string) (*Event, error) {
 	subscriberID := ""
 	if aggregateType != nil && aggregateID != nil && *aggregateType == "subscriber" {
 		subscriberID = *aggregateID
 	}
-		if dataMap, ok := data.(map[string]interface{}); ok {
+	if dataMap, ok := data.(map[string]interface{}); ok {
 		if sid, ok := dataMap["subscriber_id"].(string); ok && sid != "" {
 			subscriberID = sid
 		} else if cid, ok := dataMap["customer_id"].(string); ok && cid != "" {
@@ -119,24 +148,28 @@ func (s *Service) buildEvent(eventType string, data interface{}, aggregateID, ag
 		eventData, err = PrepareEncryptedEventData(eventType, data, subscriberID, s.jwe.Keys, encryptor, sensitive)
 	} else {
 		event, createErr := NewEventWithDeduplication(eventType, data, aggregateID, aggregateType, deduplicationID)
+		if event != nil {
+			event.TenantID = tenantID
+		}
 		return event, createErr
 	}
 	if err != nil {
 		if IsPermanentPublishError(err) {
 			event := &Event{
-				ID:            uuid.New(),
-				EventType:     eventType,
-				EventData:     mustMarshalEventData(eventType, data),
-				AggregateID:   aggregateID,
-				AggregateType: aggregateType,
-				OccurredAt:    time.Now(),
-				Status:        StatusFailed,
-				RetryCount:    0,
-				MaxRetries:    3,
-				CreatedAt:     time.Now(),
-				UpdatedAt:     time.Now(),
-				Version:       1,
+				ID:              uuid.New(),
+				EventType:       eventType,
+				EventData:       mustMarshalEventData(eventType, data),
+				AggregateID:     aggregateID,
+				AggregateType:   aggregateType,
+				OccurredAt:      time.Now(),
+				Status:          StatusFailed,
+				RetryCount:      0,
+				MaxRetries:      3,
+				CreatedAt:       time.Now(),
+				UpdatedAt:       time.Now(),
+				Version:         1,
 				DeduplicationID: deduplicationID,
+				TenantID:        tenantID,
 			}
 			errMsg := err.Error()
 			event.ErrorMessage = &errMsg
@@ -159,6 +192,7 @@ func (s *Service) buildEvent(eventType string, data interface{}, aggregateID, ag
 		UpdatedAt:       time.Now(),
 		Version:         1,
 		DeduplicationID: deduplicationID,
+		TenantID:        tenantID,
 	}, nil
 }
 
@@ -169,28 +203,28 @@ func (s *Service) storeEventInTransaction(ctx context.Context, event *Event) err
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback()
-	
+
 	// Store the event
-	if err := s.repository.Store(event); err != nil {
+	if err := s.repository.Store(ctx, event); err != nil {
 		return fmt.Errorf("failed to store event in transaction: %w", err)
 	}
-	
+
 	// Commit the transaction
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
-	
+
 	return nil
 }
 
 // PublishEventWithTx publishes an event within an existing transaction
-func (s *Service) PublishEventWithTx(tx *sql.Tx, eventType string, data interface{}, aggregateID, aggregateType *string) (*Event, error) {
+func (s *Service) PublishEventWithTx(ctx context.Context, tx *sql.Tx, eventType string, data interface{}, aggregateID, aggregateType *string) (*Event, error) {
 	event, err := s.buildEvent(eventType, data, aggregateID, aggregateType, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create event: %w", err)
 	}
 
-	if err := s.repository.Store(event); err != nil {
+	if err := s.repository.Store(ctx, event); err != nil {
 		return nil, fmt.Errorf("failed to store event: %w", err)
 	}
 
@@ -232,12 +266,12 @@ func (s *Service) Health() error {
 	if err := s.db.Ping(); err != nil {
 		return fmt.Errorf("database health check failed: %w", err)
 	}
-	
+
 	// Check dispatcher status
 	if !s.dispatcher.IsRunning() {
 		return fmt.Errorf("dispatcher is not running")
 	}
-	
+
 	return nil
 }
 
@@ -269,11 +303,11 @@ type DomainEvent interface {
 
 // SubscriptionCreated represents a subscription created event
 type SubscriptionCreated struct {
-	ID           string    `json:"id"`
-	CustomerID   string    `json:"customer_id"`
-	PlanID       string    `json:"plan_id"`
-	Status       string    `json:"status"`
-	Timestamp   time.Time `json:"occurred_at"`
+	ID         string    `json:"id"`
+	CustomerID string    `json:"customer_id"`
+	PlanID     string    `json:"plan_id"`
+	Status     string    `json:"status"`
+	Timestamp  time.Time `json:"occurred_at"`
 }
 
 func (e SubscriptionCreated) EventType() string {
@@ -299,12 +333,12 @@ func (e SubscriptionCreated) OccurredAt() time.Time {
 
 // PaymentProcessed represents a payment processed event
 type PaymentProcessed struct {
-	ID           string    `json:"id"`
-	SubscriptionID string   `json:"subscription_id"`
-	Amount       float64   `json:"amount"`
-	Currency     string    `json:"currency"`
-	Status       string    `json:"status"`
-	Timestamp   time.Time `json:"occurred_at"`
+	ID             string    `json:"id"`
+	SubscriptionID string    `json:"subscription_id"`
+	Amount         float64   `json:"amount"`
+	Currency       string    `json:"currency"`
+	Status         string    `json:"status"`
+	Timestamp      time.Time `json:"occurred_at"`
 }
 
 func (e PaymentProcessed) EventType() string {
@@ -335,4 +369,18 @@ func mustMarshalEventData(eventType string, data interface{}) json.RawMessage {
 		return raw
 	}
 	return envelope.EventData
+}
+
+// extractTenantID pulls the tenant_id value from the context. The middleware
+// layer is expected to store it under the "tenant_id" key.
+func extractTenantID(ctx context.Context) *string {
+	if ctx == nil {
+		return nil
+	}
+	if v := ctx.Value("tenant_id"); v != nil {
+		if s, ok := v.(string); ok && s != "" {
+			return &s
+		}
+	}
+	return nil
 }

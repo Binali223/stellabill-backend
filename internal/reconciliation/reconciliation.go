@@ -8,14 +8,14 @@ import (
 
 // Snapshot represents a single subscription state exported from the contract/ledger.
 type Snapshot struct {
-	SubscriptionID string            `json:"subscription_id"`
-	TenantID       string            `json:"tenant_id"`
-	Status         string            `json:"status"`
-	Amount         int64             `json:"amount"`
-	Currency       string            `json:"currency"`
-	Interval       string            `json:"interval"`
-	Balances       map[string]int64  `json:"balances"`
-	ExportedAt     time.Time         `json:"exported_at"`
+	SubscriptionID string           `json:"subscription_id"`
+	TenantID       string           `json:"tenant_id"`
+	Status         string           `json:"status"`
+	Amount         int64            `json:"amount"`
+	Currency       string           `json:"currency"`
+	Interval       string           `json:"interval"`
+	Balances       map[string]int64 `json:"balances"`
+	ExportedAt     time.Time        `json:"exported_at"`
 }
 
 // BackendSubscription represents the subscription as stored in the backend DB.
@@ -32,8 +32,8 @@ type BackendSubscription struct {
 
 // FieldMismatch records a single differing field between backend and contract.
 type FieldMismatch struct {
-	Field        string `json:"field"`
-	BackendValue string `json:"backend_value"`
+	Field         string `json:"field"`
+	BackendValue  string `json:"backend_value"`
 	ContractValue string `json:"contract_value"`
 }
 
@@ -50,7 +50,6 @@ type Report struct {
 
 func (r Report) GetID() string        { return r.SubscriptionID }
 func (r Report) GetSortValue() string { return r.SubscriptionID } // Sort by ID for now
-
 
 // Adapter defines how to fetch contract snapshots from an integration layer.
 type Adapter interface {
@@ -87,8 +86,8 @@ func (r *Reconciler) Compare(backend BackendSubscription, contract *Snapshot) Re
 	if contract == nil {
 		rep.Matched = false
 		rep.Mismatches = append(rep.Mismatches, FieldMismatch{
-			Field: "contract_snapshot",
-			BackendValue: "present",
+			Field:         "contract_snapshot",
+			BackendValue:  "present",
 			ContractValue: "missing",
 		})
 		return rep
@@ -98,8 +97,8 @@ func (r *Reconciler) Compare(backend BackendSubscription, contract *Snapshot) Re
 	// stale snapshot check: if contract exported much earlier than backend updated.
 	if contract.ExportedAt.Before(backend.UpdatedAt.Add(-24 * time.Hour)) {
 		rep.Mismatches = append(rep.Mismatches, FieldMismatch{
-			Field: "snapshot_stale",
-			BackendValue: backend.UpdatedAt.UTC().String(),
+			Field:         "snapshot_stale",
+			BackendValue:  backend.UpdatedAt.UTC().String(),
 			ContractValue: contract.ExportedAt.UTC().String(),
 		})
 	}
@@ -107,22 +106,22 @@ func (r *Reconciler) Compare(backend BackendSubscription, contract *Snapshot) Re
 	// compare key scalar fields
 	if backend.Status != contract.Status {
 		rep.Mismatches = append(rep.Mismatches, FieldMismatch{
-			Field: "status",
-			BackendValue: backend.Status,
+			Field:         "status",
+			BackendValue:  backend.Status,
 			ContractValue: contract.Status,
 		})
 	}
 	if backend.Amount != contract.Amount || backend.Currency != contract.Currency {
 		rep.Mismatches = append(rep.Mismatches, FieldMismatch{
-			Field: "amount",
-			BackendValue: fmt.Sprintf("%d %s", backend.Amount, backend.Currency),
+			Field:         "amount",
+			BackendValue:  fmt.Sprintf("%d %s", backend.Amount, backend.Currency),
 			ContractValue: fmt.Sprintf("%d %s", contract.Amount, contract.Currency),
 		})
 	}
 	if backend.Interval != contract.Interval {
 		rep.Mismatches = append(rep.Mismatches, FieldMismatch{
-			Field: "interval",
-			BackendValue: backend.Interval,
+			Field:         "interval",
+			BackendValue:  backend.Interval,
 			ContractValue: contract.Interval,
 		})
 	}
@@ -134,15 +133,15 @@ func (r *Reconciler) Compare(backend BackendSubscription, contract *Snapshot) Re
 		if cv, ok := contract.Balances[k]; ok {
 			if v != cv {
 				rep.Mismatches = append(rep.Mismatches, FieldMismatch{
-					Field: fmt.Sprintf("balances.%s", k),
-					BackendValue: fmt.Sprintf("%d", v),
+					Field:         fmt.Sprintf("balances.%s", k),
+					BackendValue:  fmt.Sprintf("%d", v),
 					ContractValue: fmt.Sprintf("%d", cv),
 				})
 			}
 		} else {
 			rep.Mismatches = append(rep.Mismatches, FieldMismatch{
-				Field: fmt.Sprintf("balances.%s", k),
-				BackendValue: fmt.Sprintf("%d", v),
+				Field:         fmt.Sprintf("balances.%s", k),
+				BackendValue:  fmt.Sprintf("%d", v),
 				ContractValue: "missing",
 			})
 		}
@@ -150,8 +149,8 @@ func (r *Reconciler) Compare(backend BackendSubscription, contract *Snapshot) Re
 	for k, cv := range contract.Balances {
 		if _, ok := backend.Balances[k]; !ok {
 			rep.Mismatches = append(rep.Mismatches, FieldMismatch{
-				Field: fmt.Sprintf("balances.%s", k),
-				BackendValue: "missing",
+				Field:         fmt.Sprintf("balances.%s", k),
+				BackendValue:  "missing",
 				ContractValue: fmt.Sprintf("%d", cv),
 			})
 		}

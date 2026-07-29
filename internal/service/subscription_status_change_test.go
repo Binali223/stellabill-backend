@@ -3,11 +3,10 @@ package service_test
 import (
 	"context"
 	"errors"
-	"testing"
-	"time"
-
 	"stellarbill-backend/internal/repository"
 	"stellarbill-backend/internal/service"
+	"testing"
+	"time"
 )
 
 func TestChangeStatus_ActiveToPaused(t *testing.T) {

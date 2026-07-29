@@ -3,20 +3,21 @@
 package integration
 
 import (
+	"context"
 	"net/http"
-	"testing"
-
-	"github.com/gin-gonic/gin"
+	"os"
 	"stellarbill-backend/internal/auth"
 	"stellarbill-backend/internal/config"
 	"stellarbill-backend/internal/routes"
 	"stellarbill-backend/internal/testutil"
-	"os"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/require"
 )
 
 func setupRouter() *gin.Engine {
 	// Initialize required configuration for tests
-	os.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/db")
 	os.Setenv("MOCK_DB", "true")
 	os.Setenv("JWT_SECRET", "Test-Secret-Must-Be-Long-And-Complex-123!")
 	os.Setenv("ADMIN_TOKEN", "Admin-Token-Must-Be-Long-And-Complex-123!")
@@ -28,12 +29,13 @@ func setupRouter() *gin.Engine {
 	// Provide mocks for the handler if needed, though middleware should stop most failures
 	// Note: Register normally initializes its own mocks, but we can override if we want.
 	// For these tests, we just let Register do its thing.
-	
+
 	routes.Register(router)
 	return router
 }
 
 func TestHealthEndpointAuthnz(t *testing.T) {
+	require.NoError(t, requireStack(t).PingPostgres(context.Background()))
 	router := setupRouter()
 
 	tests := []struct {
@@ -88,6 +90,7 @@ func TestHealthEndpointAuthnz(t *testing.T) {
 }
 
 func TestListPlansAuthenticationAndAuthorization(t *testing.T) {
+	require.NoError(t, requireStack(t).PingRedis(context.Background()))
 	router := setupRouter()
 	cfg, _ := config.Load()
 	tg := testutil.NewTestTokenGenerator(cfg.JWTSecret)
@@ -135,11 +138,11 @@ func TestListPlansAuthenticationAndAuthorization(t *testing.T) {
 			description:     "merchant can access plans",
 		},
 		{
-			name:           "valid customer token",
-			token:          createCustomerToken(tg),
-			expectedStatus: http.StatusForbidden,
+			name:            "valid customer token",
+			token:           createCustomerToken(tg),
+			expectedStatus:  http.StatusForbidden,
 			shouldHaveError: true,
-			description:    "customer cannot access plans",
+			description:     "customer cannot access plans",
 		},
 		{
 			name:            "token without user_id",
@@ -176,6 +179,7 @@ func TestListPlansAuthenticationAndAuthorization(t *testing.T) {
 }
 
 func TestListSubscriptionsAuthorizationEnforcement(t *testing.T) {
+	require.NoError(t, requireStack(t).PingWebhook(context.Background()))
 	router := setupRouter()
 	cfg, _ := config.Load()
 	tg := testutil.NewTestTokenGenerator(cfg.JWTSecret)

@@ -5,8 +5,10 @@ import (
 	"errors"
 )
 
-var ErrSecretNotFound = errors.New("secret not found")
-var ErrProviderTimeout = errors.New("secret provider timeout")
+var (
+	ErrSecretNotFound  = errors.New("secret not found")
+	ErrProviderTimeout = errors.New("secret provider timeout")
+)
 
 type Provider interface {
 	GetSecret(ctx context.Context, key string) (string, error)

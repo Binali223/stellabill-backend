@@ -9,7 +9,7 @@ const (
 	ActionAdminLogin    = "admin.login"
 	ActionVaultWithdraw = "vault.withdraw"
 	ActionConfigUpdate  = "system.config_update"
-    // Add other critical actions like "reconciliation.start" or "subscription.mutate" here
+	// Add other critical actions like "reconciliation.start" or "subscription.mutate" here
 )
 
 // Sink defines where audit events are persisted.

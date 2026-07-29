@@ -3,11 +3,10 @@ package service_test
 import (
 	"context"
 	"errors"
-	"testing"
-	"time"
-
 	"stellarbill-backend/internal/repository"
 	"stellarbill-backend/internal/service"
+	"testing"
+	"time"
 )
 
 func seedStatements() []*repository.StatementRow {
@@ -347,7 +346,6 @@ func TestStatementListByCustomer_LargeSet(t *testing.T) {
 	}
 }
 
-
 func TestStatementListByCustomer_MerchantAccess(t *testing.T) {
 	rows := seedStatements()
 	svc := newStatementService(rows...)
@@ -398,4 +396,3 @@ func TestStatementGetDetail_GeneralError(t *testing.T) {
 		t.Errorf("expected generic error, got %v", err)
 	}
 }
-

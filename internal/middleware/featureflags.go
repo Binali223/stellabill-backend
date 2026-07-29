@@ -2,34 +2,34 @@ package middleware
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"stellarbill-backend/internal/featureflags"
+	"stellarbill-backend/internal/security"
 
 	"github.com/gin-gonic/gin"
-	"stellarbill-backend/internal/featureflags"
-	"stellarbill-backend/internal/logger"
-	"stellarbill-backend/internal/security"
 )
 
 type FeatureFlagOptions struct {
-	FlagName      string
+	FlagName       string
 	DefaultEnabled bool
 	CustomResponse func(*gin.Context)
-	LogDisabled   bool
+	LogDisabled    bool
 }
 
 func FeatureFlag(flagName string) gin.HandlerFunc {
 	return FeatureFlagWithOptions(FeatureFlagOptions{
-		FlagName:      flagName,
+		FlagName:       flagName,
 		DefaultEnabled: false,
-		LogDisabled:   true,
+		LogDisabled:    true,
 	})
 }
 
 func FeatureFlagWithDefault(flagName string, defaultEnabled bool) gin.HandlerFunc {
 	return FeatureFlagWithOptions(FeatureFlagOptions{
-		FlagName:      flagName,
+		FlagName:       flagName,
 		DefaultEnabled: defaultEnabled,
-		LogDisabled:   true,
+		LogDisabled:    true,
 	})
 }
 
@@ -48,15 +48,15 @@ func FeatureFlagWithOptions(options FeatureFlagOptions) gin.HandlerFunc {
 		if !enabled {
 			if options.LogDisabled {
 				msg := fmt.Sprintf("Feature flag '%s' is disabled, blocking request to %s", options.FlagName, c.Request.URL.Path)
-				logger.SafePrintf("%s", security.MaskPII(msg))
+				log.Printf("%s", security.MaskPII(msg))
 			}
 
 			if options.CustomResponse != nil {
 				options.CustomResponse(c)
 			} else {
 				c.JSON(http.StatusServiceUnavailable, gin.H{
-					"error":       "feature_unavailable",
-					"message":     "This feature is currently unavailable",
+					"error":        "feature_unavailable",
+					"message":      "This feature is currently unavailable",
 					"feature_flag": options.FlagName,
 				})
 			}
@@ -78,10 +78,10 @@ func ConditionalFeatureFlag(flagName string, condition func(*gin.Context) bool) 
 		enabled := featureflags.IsEnabled(flagName)
 		if !enabled {
 			msg := fmt.Sprintf("Feature flag '%s' is disabled, blocking request to %s", flagName, c.Request.URL.Path)
-			logger.SafePrintf("%s", security.MaskPII(msg))
+			log.Printf("%s", security.MaskPII(msg))
 			c.JSON(http.StatusServiceUnavailable, gin.H{
-				"error":       "feature_unavailable",
-				"message":     "This feature is currently unavailable",
+				"error":        "feature_unavailable",
+				"message":      "This feature is currently unavailable",
 				"feature_flag": flagName,
 			})
 			c.Abort()
@@ -109,10 +109,10 @@ func RequireAnyFeatureFlag(flagNames ...string) gin.HandlerFunc {
 			}
 		}
 
-		logger.SafePrintf("All required feature flags %v are disabled, blocking request to %s", flagNames, security.MaskPII(c.Request.URL.Path))
+		log.Printf("All required feature flags %v are disabled, blocking request to %s", flagNames, security.MaskPII(c.Request.URL.Path))
 		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"error":         "features_unavailable",
-			"message":       "None of the required features are currently available",
+			"error":          "features_unavailable",
+			"message":        "None of the required features are currently available",
 			"required_flags": flagNames,
 		})
 		c.Abort()
@@ -132,10 +132,10 @@ func RequireAllFeatureFlags(flagNames ...string) gin.HandlerFunc {
 		for _, flagName := range flagNames {
 			if !featureflags.IsEnabled(flagName) {
 				msg := fmt.Sprintf("Feature flag '%s' is disabled, blocking request to %s", flagName, c.Request.URL.Path)
-				logger.SafePrintf("%s", security.MaskPII(msg))
+				log.Printf("%s", security.MaskPII(msg))
 				c.JSON(http.StatusServiceUnavailable, gin.H{
-					"error":         "feature_unavailable",
-					"message":       "Required feature is currently unavailable",
+					"error":          "feature_unavailable",
+					"message":        "Required feature is currently unavailable",
 					"missing_flag":   flagName,
 					"required_flags": flagNames,
 				})

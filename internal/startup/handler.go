@@ -2,10 +2,9 @@ package startup
 
 import (
 	"net/http"
+	"stellarbill-backend/internal/config"
 	"sync"
 	"time"
-
-	"stellarbill-backend/internal/config"
 
 	"github.com/gin-gonic/gin"
 )

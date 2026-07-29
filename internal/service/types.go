@@ -92,4 +92,3 @@ type SubscriptionStatusChange struct {
 	PreviousStatus string `json:"previous_status"`
 	Changed        bool   `json:"changed"`
 }
-

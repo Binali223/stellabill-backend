@@ -13,10 +13,8 @@ const (
 	RequestIDKey    = "request_id"
 )
 
-var (
-	// Validate request ID format: alphanumeric, max 32 chars
-	validRequestID = regexp.MustCompile(`^[a-zA-Z0-9\-_\.]{1,32}$`)
-)
+// Validate request ID format: alphanumeric, max 32 chars
+var validRequestID = regexp.MustCompile(`^[a-zA-Z0-9\-_\.]{1,32}$`)
 
 // RequestID generates or propagates request IDs for tracing
 func RequestID() gin.HandlerFunc {

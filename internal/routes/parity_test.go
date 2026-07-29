@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"stellarbill-backend/openapi"
 	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"stellarbill-backend/openapi"
 )
 
 // exemptedRoutes maps HTTP Method to a map of normalized paths to the documented reason
@@ -20,15 +20,17 @@ var exemptedRoutes = map[string]map[string]string{
 		"/api/v1/health":             "Internal health endpoint registered under v1, not part of public API",
 		"/api/v1/subscriptions":      "Legacy/alias endpoint mapping, primary documented path is /api/subscriptions",
 		"/api/v1/subscriptions/{id}": "Legacy/alias endpoint mapping, primary documented path is /api/subscriptions/{id}",
-		"/api/plans":              "Legacy/alias endpoint mapping, primary documented path is /api/v1/plans",
-		"/api/statements":         "Legacy/alias endpoint mapping, not yet exposed in public client spec",
-		"/api/v1/statements":      "Legacy/alias endpoint mapping, not yet exposed in public client spec",
-		"/api/statements/{id}":    "Legacy/alias endpoint mapping, not yet exposed in public client spec",
-		"/api/v1/statements/{id}": "Legacy/alias endpoint mapping, not yet exposed in public client spec",
-		"/api/admin/diagnostics":  "Internal diagnostic logs endpoint, requires strict admin tokens",
-		"/api/admin/reports":      "Internal reconciliation reports, operational use only",
-		"/api/admin/feature-flags": "Internal feature flags endpoint",
-		"/api/metrics":            "Metrics endpoint",
+		"/api/plans":                 "Legacy/alias endpoint mapping, primary documented path is /api/v1/plans",
+		"/api/statements":            "Legacy/alias endpoint mapping, not yet exposed in public client spec",
+		"/api/v1/statements":         "Legacy/alias endpoint mapping, not yet exposed in public client spec",
+		"/api/statements/{id}":       "Legacy/alias endpoint mapping, not yet exposed in public client spec",
+		"/api/v1/statements/{id}":    "Legacy/alias endpoint mapping, not yet exposed in public client spec",
+		"/api/admin/diagnostics":     "Internal diagnostic logs endpoint, requires strict admin tokens",
+		"/api/admin/reports":         "Internal reconciliation reports, operational use only",
+		"/api/admin/feature-flags":   "Internal feature flags endpoint",
+		"/api/admin/config-dump":     "Internal redacted config dump, operational use only",
+		"/internal/config-dump":      "Internal redacted config dump, operational use only",
+		"/api/metrics":               "Metrics endpoint",
 	},
 	"POST": {
 		"/api/subscriptions/{id}/status":    "Legacy status transition endpoint, not yet exposed in public spec",
@@ -56,7 +58,7 @@ func normalizePath(path string) string {
 		path = path[:len(path)-1]
 	}
 
-	var ginParamRegex = regexp.MustCompile(`/:([a-zA-Z0-9_]+)`)
+	ginParamRegex := regexp.MustCompile(`/:([a-zA-Z0-9_]+)`)
 	return ginParamRegex.ReplaceAllString(path, "/{$1}")
 }
 
