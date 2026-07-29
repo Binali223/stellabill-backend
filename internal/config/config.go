@@ -70,6 +70,13 @@ type Config struct {
 	MaxRequestSize         int64
 	MaxGzipUncompressed    int64
 	MaxGzipRatio           float64
+	// OTelLogsEnabled enables the OTel Logs bridge when true.
+	// Controlled by OTEL_LOGS_ENABLED (default: false).
+	// When enabled, structured log records are shipped to an OTLP endpoint
+	// alongside traces.  Set OTEL_EXPORTER_OTLP_ENDPOINT (or
+	// OTEL_EXPORTER_OTLP_LOGS_ENDPOINT) to point at your collector.
+	OTelLogsEnabled bool
+
 	// RedisURL configures the Redis cache backend. When empty, an in-memory
 	// cache is used instead.
 	RedisURL   string
@@ -121,6 +128,11 @@ type Config struct {
 	PgBouncerPort           int
 	DBStatementCacheMode    string // "prepare" | "describe" | "simple"
 	PgBouncerIdleInTxTimeout int   // seconds; written into pgbouncer.ini
+
+	// GracefulShutdownTimeout controls the maximum time (in seconds) the server
+	// waits for in-flight requests and connection pools to drain before forcing
+	// shutdown.  Defaults to DefaultGracefulShutdownTimeout (30s).
+	GracefulShutdownTimeout int
 }
 
 // ValidationResult holds the result of configuration validation
@@ -245,6 +257,7 @@ func Load(opts ...Option) (Config, error) {
 		IdleTimeout:            DefaultIdleTimeout,
 		TracingExporter:        getEnv("TRACING_EXPORTER", "stdout"),
 		TracingServiceName:     getEnv("TRACING_SERVICE_NAME", "stellabill-backend"),
+		OTelLogsEnabled:        getEnvBool("OTEL_LOGS_ENABLED", false),
 		SecurityFrameAncestors: getEnv("SECURITY_FRAME_ANCESTORS", "'none'"),
 		MaxRequestSize:         getEnvInt64("MAX_REQUEST_SIZE", 1024*1024*10),      // 10MB
 		MaxGzipUncompressed:    getEnvInt64("MAX_GZIP_UNCOMPRESSED", 1024*1024*50), // 50MB
@@ -266,10 +279,7 @@ func Load(opts ...Option) (Config, error) {
 		PgBouncerPort:            DefaultPgBouncerPort,
 		DBStatementCacheMode:     DefaultDBStatementCacheMode,
 		PgBouncerIdleInTxTimeout: DefaultPgBouncerIdleInTxTimeout,
-		// SPIRE/SPIFFE security configuration
-		SpireSocketPath: getEnv("SPIRE_SOCKET_PATH", "unix:///run/spire/sockets/agent.sock"),
-		APISpiffeID:     getEnv("API_SPIFFE_ID", "spiffe://stellabill.internal/api"),
-		WorkerSpiffeID:  getEnv("WORKER_SPIFFE_ID", "spiffe://stellabill.internal/worker"),
+		GracefulShutdownTimeout:  DefaultGracefulShutdownTimeout,
 	}
 
 	// Resolve secrets through the provider
@@ -699,6 +709,16 @@ func getEnvInt64(key string, fallback int64) int64 {
 	if v := os.Getenv(key); v != "" {
 		if i, err := strconv.ParseInt(v, 10, 64); err == nil {
 			return i
+		}
+	}
+	return fallback
+}
+
+// getEnvBool retrieves an environment variable as bool with a fallback value.
+func getEnvBool(key string, fallback bool) bool {
+	if v := os.Getenv(key); v != "" {
+		if b, err := strconv.ParseBool(v); err == nil {
+			return b
 		}
 	}
 	return fallback
