@@ -108,6 +108,32 @@ func (t *timingTracer) TraceQueryEnd(ctx context.Context, _ *pgx.Conn, data pgx.
 	}
 }
 
+// DrainPool stops accepting new connections and waits for in-flight queries to
+// complete, bounded by ctx. It closes the pool afterward and should be called
+// during graceful shutdown after the HTTP server has stopped accepting new
+// requests. A nil pool is a no-op.
+//
+// Because pgxpool.Pool.Close() blocks until all acquired connections are
+// released, DrainPool runs Close in a separate goroutine and respects ctx.
+func DrainPool(ctx context.Context, pool *pgxpool.Pool) error {
+	if pool == nil {
+		return nil
+	}
+
+	done := make(chan struct{})
+	go func() {
+		pool.Close()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		return nil
+	case <-ctx.Done():
+		return fmt.Errorf("drain database pool: %w", ctx.Err())
+	}
+}
+
 // NewPool constructs a pgx connection pool from cfg, applying the DBPool*
 // tuning fields and PgBouncer settings, and verifies connectivity before
 // returning.
