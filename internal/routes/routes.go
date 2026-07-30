@@ -52,6 +52,16 @@ func Register(r *gin.Engine) {
 	r.Use(middleware.TailSamplingSignals())
 	r.Use(middleware.TraceIDMiddleware())
 
+	// Per-endpoint concurrency shedding — shed excess load before rate limiting
+	if cfg.ConcurrencyCapsPath != "" {
+		concCfg, err := middleware.LoadConcurrencyConfig(cfg.ConcurrencyCapsPath)
+		if err != nil {
+			fmt.Printf("WARNING: failed to load concurrency caps config from %s: %v\n", cfg.ConcurrencyCapsPath, err)
+		} else {
+			r.Use(middleware.InflightMiddleware(concCfg))
+		}
+	}
+
 	// Rate limiting
 	rateLimitConfig := middleware.RateLimiterConfig{
 		Enabled:        cfg.RateLimitEnabled,
