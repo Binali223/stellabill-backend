@@ -1,5 +1,3 @@
-# PR Description
-
 ## Description
 
 This PR implements tracking for failed admin authentication attempts per source and per account, utilizing an exponential backoff strategy that doubles the lockout duration (from 1 second up to 15 minutes) with each consecutive failure. It also introduces metrics and audit logs for monitoring and alerting.

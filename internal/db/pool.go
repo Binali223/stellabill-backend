@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"stellarbill-backend/internal/config"
+	"stellarbill-backend/internal/middleware"
 	"stellarbill-backend/internal/servertiming"
 	"time"
 
@@ -95,12 +96,15 @@ func (t *timingTracer) TraceQueryStart(ctx context.Context, _ *pgx.Conn, _ pgx.T
 	return context.WithValue(ctx, queryStartTimeKey{}, time.Now())
 }
 
-func (t *timingTracer) TraceQueryEnd(ctx context.Context, _ *pgx.Conn, _ pgx.TraceQueryEndData) {
+func (t *timingTracer) TraceQueryEnd(ctx context.Context, _ *pgx.Conn, data pgx.TraceQueryEndData) {
 	startVal := ctx.Value(queryStartTimeKey{})
 	if start, ok := startVal.(time.Time); ok {
 		if rec := servertiming.FromContext(ctx); rec != nil {
 			rec.RecordDB(time.Since(start))
 		}
+	}
+	if acc := middleware.AccumulatorFromContext(ctx); acc != nil {
+		acc.AddDBRowsRead(data.CommandTag.RowsAffected())
 	}
 }
 
