@@ -3,6 +3,9 @@ package db
 import (
 	"context"
 	"fmt"
+	"sync"
+	"time"
+
 	"stellarbill-backend/internal/config"
 	"stellarbill-backend/internal/middleware"
 	"stellarbill-backend/internal/servertiming"
@@ -10,7 +13,123 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
+
+var hedgedReadsTotal = promauto.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "hedged_reads_total",
+		Help: "Total hedged read attempts by which attempt won.",
+	},
+	[]string{"winner"},
+)
+
+// HedgedQuery executes the first attempt immediately and starts a second attempt
+// after the supplied delay if the first attempt is still running. The first
+// successful attempt wins and the losing attempt is canceled to avoid doing
+// extra work on replicas.
+func HedgedQuery(ctx context.Context, delay time.Duration, fn func(ctx context.Context, attempt int) error) (int, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if delay < 0 {
+		delay = 0
+	}
+
+	type attemptResult struct {
+		attempt int
+		err     error
+	}
+
+	results := make(chan attemptResult, 2)
+	done := make(chan struct{})
+	var doneOnce sync.Once
+	closeDone := func() {
+		doneOnce.Do(func() {
+			close(done)
+		})
+	}
+	var cancelFirst context.CancelFunc
+	firstCtx, cancelFirst := context.WithCancel(ctx)
+	defer cancelFirst()
+
+	go func() {
+		results <- attemptResult{attempt: 1, err: fn(firstCtx, 1)}
+	}()
+
+	var (
+		cancelSecond  context.CancelFunc
+		secondCtx     context.Context
+		secondStarted bool
+		mu            sync.Mutex
+	)
+
+	startSecond := func() {
+		mu.Lock()
+		defer mu.Unlock()
+		if secondStarted {
+			return
+		}
+		secondStarted = true
+		secondCtx, cancelSecond = context.WithCancel(ctx)
+		go func() {
+			results <- attemptResult{attempt: 2, err: fn(secondCtx, 2)}
+		}()
+	}
+
+	if delay > 0 {
+		go func() {
+			timer := time.NewTimer(delay)
+			defer timer.Stop()
+			select {
+			case <-ctx.Done():
+			case <-done:
+			case <-timer.C:
+				startSecond()
+			}
+		}()
+	} else {
+		startSecond()
+	}
+
+	var (
+		winnerErr error
+		winner    int
+		seen      int
+	)
+
+	for seen < 2 {
+		select {
+		case <-ctx.Done():
+			if cancelSecond != nil {
+				cancelSecond()
+			}
+			return 0, ctx.Err()
+		case result := <-results:
+			seen++
+			if result.err == nil {
+				if result.attempt == 1 {
+					if cancelSecond != nil {
+						cancelSecond()
+					}
+				} else {
+					cancelFirst()
+				}
+				closeDone()
+				hedgedReadsTotal.WithLabelValues(map[bool]string{true: "first", false: "second"}[result.attempt == 1]).Inc()
+				return result.attempt, nil
+			}
+			winnerErr = result.err
+			winner = result.attempt
+		}
+	}
+
+	if winner > 0 {
+		hedgedReadsTotal.WithLabelValues(map[bool]string{true: "first", false: "second"}[winner == 1]).Inc()
+	}
+	return winner, winnerErr
+}
 
 // PoolPinger adapts a *pgxpool.Pool to the handlers.DBPinger interface.
 //
