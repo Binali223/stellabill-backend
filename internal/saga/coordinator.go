@@ -13,7 +13,6 @@ type Step struct {
 	RetryPolicy RetryPolicy
 }
 
-// Placeholder for metric tracking
 var StepRetriesTotal = func(flow, step string) {}
 
 func ExecuteStep(ctx context.Context, flowName string, step Step) error {

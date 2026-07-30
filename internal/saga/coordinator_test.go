@@ -20,7 +20,7 @@ func TestRetryPolicySuccess(t *testing.T) {
 		},
 		RetryPolicy: RetryPolicy{
 			MaxAttempts: 3,
-			BaseDelay:   10 * time.Millisecond,
+			BaseDelay:   5 * time.Millisecond,
 			Jitter:      0.1,
 		},
 	}
@@ -44,7 +44,7 @@ func TestRetryPolicyExhausted(t *testing.T) {
 		},
 		RetryPolicy: RetryPolicy{
 			MaxAttempts: 2,
-			BaseDelay:   5 * time.Millisecond,
+			BaseDelay:   2 * time.Millisecond,
 			Jitter:      0.0,
 		},
 	}
